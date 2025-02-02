@@ -164,6 +164,8 @@ cython_debug/
 # data
 data/
 images/
+results/
+src/img_analysis/data/
 
 # mac
 .DS_Store

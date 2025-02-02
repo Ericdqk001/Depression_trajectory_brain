@@ -14,7 +14,7 @@ def prepare_image():
     """
     processed_data_path = Path(
         "data",
-        "processed_data",
+        "nm_processed_data",
     )
 
     core_data_path = Path(

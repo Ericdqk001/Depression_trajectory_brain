@@ -14,7 +14,7 @@ def deconfound_image_exc_sex():
     # %%
     processed_data_path = Path(
         "data",
-        "processed_data",
+        "nm_processed_data",
     )
 
     LCA_path = Path(
