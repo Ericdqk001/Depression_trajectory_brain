@@ -4,10 +4,9 @@ from pathlib import Path
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
-# TODO: Individual mean CT for CT and individual mean SA for SA
 # TODO: Check for outliers of the features (+- 5SD)
-# TODO: Add global measures
 # TODO: Add subcortical measures
+# TODO: Prepare long form data for mixed effects models (done)
 
 
 def prepare_image():
@@ -222,6 +221,9 @@ def prepare_image():
         axis=1,
     )
 
+    # Drop eventname column
+    t1w_all_cortical_features = t1w_all_cortical_features.drop(columns="eventname")
+
     ### Add covariates to be considered in the analysis (Covariates included age, age2,
     # sex, ethnicity, study site, recent social deprivation and additional imaging
     # covariates: head motion)
@@ -405,6 +407,52 @@ def prepare_image():
     )
 
     # %%
+    # Create a long form data for mixed effects models by hemispheres
+
+    lh_columns = [
+        col for col in t1w_all_cortical_features_cov_traj.columns if col.endswith("lh")
+    ]
+    rh_columns = [
+        col for col in t1w_all_cortical_features_cov_traj.columns if col.endswith("rh")
+    ]
+
+    # Identify all non-imaging columns
+    non_imaging_columns = [
+        col
+        for col in t1w_all_cortical_features_cov_traj.columns
+        if col not in lh_columns + rh_columns
+    ]
+
+    # Create new DataFrames for left and right hemispheres
+    lh_data = t1w_all_cortical_features_cov_traj[
+        non_imaging_columns + lh_columns
+    ].copy()
+
+    rh_data = t1w_all_cortical_features_cov_traj[
+        non_imaging_columns + rh_columns
+    ].copy()
+
+    # Rename columns to match (remove "lh" and "rh" suffixes)
+    lh_data = lh_data.rename(
+        columns=lambda col: col.replace("lh", "") if col in lh_columns else col
+    )
+    rh_data = rh_data.rename(
+        columns=lambda col: col.replace("rh", "") if col in rh_columns else col
+    )
+
+    lh_data["hemisphere"] = "Left"
+    rh_data["hemisphere"] = "Right"
+
+    # Concatenate left and right hemisphere data
+    long_data = pd.concat([lh_data, rh_data], axis=0)
+
+    long_data.to_csv(
+        Path(
+            processed_data_path,
+            "t1w_all_cortical_features_cov_traj_long.csv",
+        ),
+        index=True,
+    )
 
     # %%
     ### Now select the columns that are the phenotypes of interest for each modality
@@ -434,6 +482,44 @@ def prepare_image():
 
     with open(brain_features_of_interest_path, "w") as f:
         json.dump(brain_features_of_interest, f)
+
+    # Save unilateral features of interest for mixed effects models for each modalities
+
+    def get_unilateral_features(feature_list):
+        seen = set()  # Track unique names
+        unilateral_features = []
+
+        for feature in feature_list:
+            # Remove "lh" or "rh" at the end of the feature name
+            if feature.endswith("lh"):
+                feature_name = feature[:-2]
+            elif feature.endswith("rh"):
+                feature_name = feature[:-2]
+            else:
+                feature_name = feature
+
+            # Preserve order while ensuring uniqueness
+            if feature_name not in seen:
+                seen.add(feature_name)
+                unilateral_features.append(feature_name)
+
+        return unilateral_features
+
+    unilateral_brain_features = {
+        "cortical_thickness": get_unilateral_features(t1w_cortical_thickness_rois),
+        "cortical_volume": get_unilateral_features(t1w_cortical_volume_rois),
+        "cortical_surface_area": get_unilateral_features(
+            t1w_cortical_surface_area_rois
+        ),
+    }
+
+    unilateral_brain_features_path = Path(
+        processed_data_path,
+        "unilateral_brain_features.json",
+    )
+
+    with open(unilateral_brain_features_path, "w") as f:
+        json.dump(unilateral_brain_features, f)
 
 
 if __name__ == "__main__":
