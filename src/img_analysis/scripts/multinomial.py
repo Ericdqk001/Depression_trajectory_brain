@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+# TODO: Individual mean CT for CT and individual mean SA for SA
+# TODO: Standardize the features
+
 
 def run_multinomial():
     """Run multinomial logistic regression on imaging features.
@@ -45,9 +48,7 @@ def run_multinomial():
     ]
 
     results_path = Path(
-        "src",
-        "img_analysis",
-        "results",
+        "img_analysis_results",
     )
 
     dependent_var = "class_label"

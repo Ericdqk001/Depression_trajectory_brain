@@ -1,12 +1,19 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # TODO: Check for outliers of the features (+- 5SD)
 # TODO: Add subcortical measures
-# TODO: Prepare long form data for mixed effects models (done)
+# TODO: Add tracts
+# TODO: Add motion as a covariate
+# TODO: Add BMI
+# TODO: Add quality control and post-processing control for diffusion MRI
+# Prepare long form data for mixed effects models (done)
+
+# Standardize the imaging features and age (done)
 
 
 def prepare_image():
@@ -119,7 +126,7 @@ def prepare_image():
     ###
 
     # %%
-    ### Now prepare the smri (cortical features) data
+    ### Now prepare the smri data
 
     mri_y_smr_thk_dst_path = Path(
         imaging_path,
@@ -150,6 +157,17 @@ def prepare_image():
 
     mri_y_smr_area_dst = pd.read_csv(
         mri_y_smr_area_dst_path,
+        index_col=0,
+        low_memory=False,
+    )
+
+    mir_y_smr_vol_aseg_path = Path(
+        imaging_path,
+        "mri_y_smr_vol_aseg.csv",
+    )
+
+    mri_y_smr_vol_aseg = pd.read_csv(
+        mir_y_smr_vol_aseg_path,
         index_col=0,
         low_memory=False,
     )
@@ -210,25 +228,51 @@ def prepare_image():
         index=True,
     )
 
-    # Combine the three cortical modalities
+    # Subcortical volume
 
-    t1w_all_cortical_features = pd.concat(
+    t1w_subcortical_volume_bl = mri_y_smr_vol_aseg[
+        mri_y_smr_vol_aseg.eventname == "baseline_year_1_arm_1"
+    ]
+
+    # NOTE: Everyone is missing values for smri_vol_scs_lesionlh and
+    # smri_vol_scs_lesionrh so I drop them here
+
+    t1w_subcortical_volume_bl_pass = t1w_subcortical_volume_bl[
+        t1w_subcortical_volume_bl.index.isin(subs_t1w_pass.index)
+    ]
+
+    t1w_subcortical_volume_bl_pass = t1w_subcortical_volume_bl_pass.drop(
+        columns=["smri_vol_scs_lesionlh", "smri_vol_scs_lesionrh"]
+    ).dropna()
+
+    t1w_subcortical_volume_bl_pass.to_csv(
+        Path(
+            processed_data_path,
+            "t1w_subcortical_volume_bl_pass.csv",
+        ),
+        index=True,
+    )
+
+    # Combine the structural modalities
+
+    all_brain_features = pd.concat(
         [
             t1w_cortical_thickness_bl_pass,
             t1w_cortical_volume_bl_pass,
             t1w_cortical_surface_area_bl_pass,
+            t1w_subcortical_volume_bl_pass,
         ],
         axis=1,
     )
 
     # Drop eventname column
-    t1w_all_cortical_features = t1w_all_cortical_features.drop(columns="eventname")
+    all_brain_features = all_brain_features.drop(columns="eventname")
 
     ### Add covariates to be considered in the analysis (Covariates included age, age2,
     # sex, ethnicity, study site, recent social deprivation and additional imaging
     # covariates: head motion)
 
-    # For site information
+    # For site information (imaging device ID)
     mri_y_adm_info_path = Path(
         imaging_path,
         "mri_y_adm_info.csv",
@@ -251,21 +295,22 @@ def prepare_image():
     label = le.fit_transform(mri_y_adm_info_bl["mri_info_deviceserialnumber"])
     mri_y_adm_info_bl["label_site"] = label
 
-    # For smri_vol_scs_intracranialv (intracranial volume)
-    mri_y_smr_vol_aseg_path = Path(
-        imaging_path,
-        "mri_y_smr_vol_aseg.csv",
-    )
+    # # For smri_vol_scs_intracranialv (intracranial volume) (Already added because we
+    # # have subcortical volume data)
+    # mri_y_smr_vol_aseg_path = Path(
+    #     imaging_path,
+    #     "mri_y_smr_vol_aseg.csv",
+    # )
 
-    mri_y_smr_vol_aseg = pd.read_csv(
-        mri_y_smr_vol_aseg_path,
-        index_col=0,
-        low_memory=False,
-    )
+    # mri_y_smr_vol_aseg = pd.read_csv(
+    #     mri_y_smr_vol_aseg_path,
+    #     index_col=0,
+    #     low_memory=False,
+    # )
 
-    mri_y_smr_vol_aseg_bl = mri_y_smr_vol_aseg[
-        mri_y_smr_vol_aseg.eventname == "baseline_year_1_arm_1"
-    ]
+    # mri_y_smr_vol_aseg_bl = mri_y_smr_vol_aseg[
+    #     mri_y_smr_vol_aseg.eventname == "baseline_year_1_arm_1"
+    # ]
 
     # For interview_age (in months)
     abcd_y_lt_path = Path(
@@ -285,60 +330,73 @@ def prepare_image():
 
     abcd_y_lt_bl["age2"] = abcd_y_lt_bl.interview_age**2
 
-    # Social deprivation (tried with variables of social deprivation as documented in
-    # Shen's work but these variables had full missing values)
+    # Add family ID
 
-    # social_dep_var_dict_path = Path(
-    #     "data",
-    #     "var_dict",
-    #     "social_deprivation_dict.csv",
-    # )
+    genetics_path = Path(
+        core_data_path,
+        "genetics",
+    )
 
-    # social_dep_var_dict = pd.read_csv(
-    #     social_dep_var_dict_path,
-    #     index_col=0,
-    #     low_memory=False,
-    # )
+    genetics_relatedness_path = Path(
+        genetics_path,
+        "gen_y_pihat.csv",
+    )
 
-    # social_dep_var_names = social_dep_var_dict["var_name"].values
+    genetics_relatedness = pd.read_csv(
+        genetics_relatedness_path,
+        index_col=0,
+        low_memory=False,
+    )
 
-    # # Remove samples who refused to answer any of the social deprivation questions (No one removed)
-    # demographics_bl = demographics_bl[
-    #     ~demographics_bl[social_dep_var_names].isin([777]).any(axis=1)
-    # ]
+    family_id = genetics_relatedness["rel_family_id"]
 
-    # demographics_bl["social_deprivation"] = demographics_bl[social_dep_var_names].sum(
-    #     axis=1
-    # )
+    # Add household income
 
-    # Add Education levels for now
+    household_income = demographics_bl["demo_comb_income_v2"].copy()
+
+    # Not available category (777:refused to answer, 999: don't know, missing values)
+
+    household_income = household_income.replace([777, np.nan], 999)
+
+    # Add race/ethnicity
+    ethnicity = demographics_bl.race_ethnicity
+
+    # TODO: Add education, motion (mri_y_qc_motion), BMI
 
     # Put the covariates together
 
     series_list = [
         demographics_bl.demo_sex_v2,
         mri_y_adm_info_bl.label_site,
-        mri_y_smr_vol_aseg_bl.smri_vol_scs_intracranialv,
+        # mri_y_smr_vol_aseg_bl.smri_vol_scs_intracranialv,
         abcd_y_lt_bl.interview_age,
         abcd_y_lt_bl.age2,
+        family_id,
+        household_income,
+        ethnicity,
     ]
 
     covariates = pd.concat(series_list, axis=1)
 
-    # Join the covariates to the brain features (no missing values)
+    # Join the covariates to the brain features (2 with no race data removed)
 
-    t1w_all_cortical_features_cov = t1w_all_cortical_features.join(
+    all_brain_features_cov = all_brain_features.join(
         covariates,
         how="left",
-    )
+    ).dropna()
 
-    t1w_all_cortical_features_cov.to_csv(
+    all_brain_features_cov.to_csv(
         Path(
             processed_data_path,
-            "t1w_all_cortical_features_cov.csv",
+            "all_brain_features_cov.csv",
         ),
         index=True,
     )
+
+    # %% This section processes the white tracts data as an independent complete data
+    # file
+
+    # %% This section joins the trajectory data to the imaging data
 
     # Join the imaging features and trajectories here
 
@@ -390,15 +448,40 @@ def prepare_image():
     # Join the imaging data with the trajectory data
     # 124 missing values for now
 
-    t1w_all_cortical_features_cov_traj = t1w_all_cortical_features_cov.join(
+    all_brain_features_cov_traj = all_brain_features_cov.join(
         unique_dep_traj,
         how="left",
     )
 
     # Remove missing values
-    t1w_all_cortical_features_cov_traj = t1w_all_cortical_features_cov_traj.dropna()
+    all_brain_features_cov_traj = all_brain_features_cov_traj.dropna()
 
-    t1w_all_cortical_features_cov_traj.to_csv(
+    # TODO: Join with white tracts data
+
+    # %%
+
+    # Standardize the imaging features and age
+    smri_columns = [
+        col
+        for col in all_brain_features_cov_traj.columns
+        if col.startswith("smri")
+    ]
+
+    # Add 'interview_age' and 'age2' to the list of columns to standardize
+    columns_to_standardize = smri_columns + [
+        "interview_age",
+        "age2",
+    ]
+
+    # Initialize the scaler
+    scaler = StandardScaler()
+
+    # Standardize the selected columns
+    all_brain_features_cov_traj[columns_to_standardize] = scaler.fit_transform(
+        all_brain_features_cov_traj[columns_to_standardize]
+    )
+
+    all_brain_features_cov_traj.to_csv(
         Path(
             processed_data_path,
             "t1w_all_cortical_features_cov_traj.csv",
@@ -410,25 +493,25 @@ def prepare_image():
     # Create a long form data for mixed effects models by hemispheres
 
     lh_columns = [
-        col for col in t1w_all_cortical_features_cov_traj.columns if col.endswith("lh")
+        col for col in all_brain_features_cov_traj.columns if col.endswith("lh")
     ]
     rh_columns = [
-        col for col in t1w_all_cortical_features_cov_traj.columns if col.endswith("rh")
+        col for col in all_brain_features_cov_traj.columns if col.endswith("rh")
     ]
 
     # Identify all non-imaging columns
     non_imaging_columns = [
         col
-        for col in t1w_all_cortical_features_cov_traj.columns
+        for col in all_brain_features_cov_traj.columns
         if col not in lh_columns + rh_columns
     ]
 
     # Create new DataFrames for left and right hemispheres
-    lh_data = t1w_all_cortical_features_cov_traj[
+    lh_data = all_brain_features_cov_traj[
         non_imaging_columns + lh_columns
     ].copy()
 
-    rh_data = t1w_all_cortical_features_cov_traj[
+    rh_data = all_brain_features_cov_traj[
         non_imaging_columns + rh_columns
     ].copy()
 
