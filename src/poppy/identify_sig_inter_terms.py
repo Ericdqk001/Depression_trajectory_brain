@@ -25,7 +25,7 @@ features_path = Path(
 feature_sets_path = Path(
     "data",
     "poppy",
-    "features_for_repeated_effects.json",
+    "bilateral_features.json",
 )
 
 results_path = Path(
@@ -50,7 +50,7 @@ features_df["rel_family_id"] = features_df["rel_family_id"].astype("category")
 repeated_results = pd.read_csv(
     Path(
         results_path,
-        "repeated_regional_prs_results.csv",
+        "repeated_bilateral_prs_results.csv",
     )
 )
 
