@@ -67,7 +67,7 @@ for modality in modalities:
             formula = f"{feature} ~ {prs_variable} + {' + '.join(fixed_effects)}"
             model = smf.ols(formula=formula, data=df).fit()
 
-            for effect in model.params.index:
+            for effect in [prs_variable]:
                 coef = model.params[effect]
                 pval = model.pvalues[effect]
                 ci_low, ci_high = model.conf_int().loc[effect].values
