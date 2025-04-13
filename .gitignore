@@ -166,6 +166,7 @@ data/
 images/
 img_analysis_results/
 src/img_analysis/data/
+src/poppy/analysis_results/
 
 # mac
 .DS_Store

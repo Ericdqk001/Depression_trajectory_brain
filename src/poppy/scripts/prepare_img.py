@@ -48,7 +48,8 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         low_memory=False,
     )
 
-    demographics_bl = demographics[demographics.eventname == wave]
+    # Select the baseline year 1 demographics data
+    demographics_bl = demographics[demographics.eventname == "baseline_year_1_arm_1"]
 
     demographics_bl.demo_sex_v2.value_counts()
 
@@ -70,6 +71,8 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # Remove subjects with intersex from the imaging data
     mri_y_qc_incl_bl = mri_y_qc_incl_bl[~mri_y_qc_incl_bl.index.isin(inter_sex_subs)]
+
+    print("Sample size with MRI recommended inclusion", mri_y_qc_incl_bl.shape[0])
 
     # %%
     ### Remove imaging data with data quality issues, overall MRI clinical report is used
@@ -105,13 +108,12 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     score_mask = mri_clin_report_bl.mrif_score < 3
 
-    # No missing values here
     subs_pass = mri_clin_report_bl[qc_passed_mask & score_mask]
 
     ###
 
     # %%
-    ### Now prepare the smri data
+    ### Now prepare the imaging data
 
     mri_y_smr_thk_dst_path = Path(
         imaging_path,
@@ -179,41 +181,41 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         low_memory=False,
     )
 
-    # Select the baseline data for the subjects who passed the quality control and drop
-    # subjects with missing data and save the data in csv files
+    # Select the data for the subjects who passed the quality control and drop
+    # subjects with missing data
 
     # Cortical thickness data
-    mri_y_smr_thk_dst_bl = mri_y_smr_thk_dst[mri_y_smr_thk_dst.eventname == wave]
+    mri_y_smr_thk_dst = mri_y_smr_thk_dst[mri_y_smr_thk_dst.eventname == wave]
 
-    t1w_cortical_thickness_bl_pass = mri_y_smr_thk_dst_bl[
-        mri_y_smr_thk_dst_bl.index.isin(subs_pass.index)
+    t1w_cortical_thickness_pass = mri_y_smr_thk_dst[
+        mri_y_smr_thk_dst.index.isin(subs_pass.index)
     ].dropna()
 
     # Cortical volume data
-    mri_y_smr_vol_dst_bl = mri_y_smr_vol_dst[mri_y_smr_vol_dst.eventname == wave]
+    mri_y_smr_vol_dst = mri_y_smr_vol_dst[mri_y_smr_vol_dst.eventname == wave]
 
-    t1w_cortical_volume_bl_pass = mri_y_smr_vol_dst_bl[
-        mri_y_smr_vol_dst_bl.index.isin(subs_pass.index)
+    t1w_cortical_volume_pass = mri_y_smr_vol_dst[
+        mri_y_smr_vol_dst.index.isin(subs_pass.index)
     ].dropna()
 
     # Cortical surface area data
 
-    mri_y_smr_area_dst_bl = mri_y_smr_area_dst[mri_y_smr_area_dst.eventname == wave]
+    mri_y_smr_area_dst = mri_y_smr_area_dst[mri_y_smr_area_dst.eventname == wave]
 
-    t1w_cortical_surface_area_bl_pass = mri_y_smr_area_dst_bl[
-        mri_y_smr_area_dst_bl.index.isin(subs_pass.index)
+    t1w_cortical_surface_area_pass = mri_y_smr_area_dst[
+        mri_y_smr_area_dst.index.isin(subs_pass.index)
     ].dropna()
 
     # Subcortical volume
 
-    t1w_subcortical_volume_bl = mri_y_smr_vol_aseg[mri_y_smr_vol_aseg.eventname == wave]
+    t1w_subcortical_volume = mri_y_smr_vol_aseg[mri_y_smr_vol_aseg.eventname == wave]
 
-    t1w_subcortical_volume_bl_pass = t1w_subcortical_volume_bl[
-        t1w_subcortical_volume_bl.index.isin(subs_pass.index)
+    t1w_subcortical_volume_pass = t1w_subcortical_volume[
+        t1w_subcortical_volume.index.isin(subs_pass.index)
     ]
 
     # NOTE: These columns were dropped because they had all missing values or all zeros
-    t1w_subcortical_volume_bl_pass = t1w_subcortical_volume_bl_pass.drop(
+    t1w_subcortical_volume_pass = t1w_subcortical_volume_pass.drop(
         columns=[
             "smri_vol_scs_lesionlh",
             "smri_vol_scs_lesionrh",
@@ -224,18 +226,18 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # # Add tracts data (mri_y_dti_fa_fs_at (FA), mri_y_dti_md_fs_at(MD))
 
-    dmir_fractional_anisotropy_bl = mri_y_dti_fa_fs_at[
+    dmir_fractional_anisotropy = mri_y_dti_fa_fs_at[
         mri_y_dti_fa_fs_at.eventname == wave
     ]
 
-    dmir_mean_diffusivity_bl = mri_y_dti_md_fs_at[mri_y_dti_md_fs_at.eventname == wave]
+    dmir_mean_diffusivity = mri_y_dti_md_fs_at[mri_y_dti_md_fs_at.eventname == wave]
 
-    dmir_fractional_anisotropy_bl_pass = dmir_fractional_anisotropy_bl[
-        dmir_fractional_anisotropy_bl.index.isin(subs_pass.index)
+    dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy[
+        dmir_fractional_anisotropy.index.isin(subs_pass.index)
     ].dropna()
 
-    dmir_mean_diffusivity_bl_pass = dmir_mean_diffusivity_bl[
-        dmir_mean_diffusivity_bl.index.isin(subs_pass.index)
+    dmir_mean_diffusivity_pass = dmir_mean_diffusivity[
+        dmir_mean_diffusivity.index.isin(subs_pass.index)
     ].dropna()
 
     # Rename the FA and DM features to have "lh" or "rh" suffixes
@@ -317,22 +319,20 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         # Reorder the DataFrame
         return df[first_col + sorted_cols]
 
-    dmir_fractional_anisotropy_bl_pass = sort_dmri_columns(
-        dmir_fractional_anisotropy_bl_pass
-    )
+    dmir_fractional_anisotropy_pass = sort_dmri_columns(dmir_fractional_anisotropy_pass)
 
-    dmir_mean_diffusivity_bl_pass = sort_dmri_columns(dmir_mean_diffusivity_bl_pass)
+    dmir_mean_diffusivity_pass = sort_dmri_columns(dmir_mean_diffusivity_pass)
 
     # Parse the DTI features
     dti_features_mapping = parse_dti_features_pretty(dmri_data_dict)
 
     # Rename the columns in dmri data
 
-    dmir_fractional_anisotropy_bl_pass.rename(
+    dmir_fractional_anisotropy_pass.rename(
         columns=dti_features_mapping,
         inplace=True,
     )
-    dmir_mean_diffusivity_bl_pass.rename(
+    dmir_mean_diffusivity_pass.rename(
         columns=dti_features_mapping,
         inplace=True,
     )
@@ -341,12 +341,12 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     mri_all_features = pd.concat(
         [
-            t1w_cortical_thickness_bl_pass,
-            t1w_cortical_volume_bl_pass,
-            t1w_cortical_surface_area_bl_pass,
-            t1w_subcortical_volume_bl_pass,
-            dmir_fractional_anisotropy_bl_pass,
-            dmir_mean_diffusivity_bl_pass,
+            t1w_cortical_thickness_pass,
+            t1w_cortical_volume_pass,
+            t1w_cortical_surface_area_pass,
+            t1w_subcortical_volume_pass,
+            dmir_fractional_anisotropy_pass,
+            dmir_mean_diffusivity_pass,
         ],
         axis=1,
     )
@@ -354,9 +354,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Drop eventname column
     mri_all_features = mri_all_features.drop(columns="eventname")
 
-    ### Add covariates to be considered in the analysis (Covariates included age, age2,
-    # sex, ethnicity, study site, recent social deprivation and additional imaging
-    # covariates: head motion)
+    ### Add covariates to be considered in the analysis
 
     # For site information (imaging device ID)
     mri_y_adm_info_path = Path(
@@ -370,14 +368,15 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         low_memory=False,
     )
 
-    mri_y_adm_info_bl = mri_y_adm_info[mri_y_adm_info.eventname == wave]
+    mri_y_adm_info = mri_y_adm_info[mri_y_adm_info.eventname == wave]
 
     le = LabelEncoder()
 
     # Using .fit_transform function to fit label
     # encoder and return encoded label
-    label = le.fit_transform(mri_y_adm_info_bl["mri_info_deviceserialnumber"])
-    mri_y_adm_info_bl["label_site"] = label
+    label = le.fit_transform(mri_y_adm_info["mri_info_deviceserialnumber"])
+
+    mri_y_adm_info["img_device_label"] = label
 
     # For interview_age (in months)
     abcd_y_lt_path = Path(
@@ -391,11 +390,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         low_memory=False,
     )
 
-    abcd_y_lt_bl = abcd_y_lt[abcd_y_lt.eventname == wave]
+    abcd_y_lt = abcd_y_lt[abcd_y_lt.eventname == wave]
 
     # Add an age squared term
 
-    abcd_y_lt_bl["age2"] = abcd_y_lt_bl.interview_age**2
+    abcd_y_lt["age2"] = abcd_y_lt.interview_age**2
 
     # Add family ID
 
@@ -437,111 +436,22 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     series_list = [
         demographics_bl.demo_sex_v2,
-        mri_y_adm_info_bl.label_site,
-        # mri_y_smr_vol_aseg_bl.smri_vol_scs_intracranialv,s
-        abcd_y_lt_bl.interview_age,
-        abcd_y_lt_bl.age2,
+        mri_y_adm_info.img_device_label,
+        abcd_y_lt.interview_age,
+        abcd_y_lt.age2,
         family_id,
-        # household_income,
-        # ethnicity,
-        # prnt_education,
-        # height_avg,
-        # weight_avg,
     ]
 
     covariates = pd.concat(series_list, axis=1).dropna()
 
     covariates = covariates.join(pca_data, how="inner")
 
-    # Calculate BMI z-score referencing to WHO growth standards
-
-    # who_bmi_std_path = Path(
-    #     "data",
-    #     "raw_data",
-    #     "who_bmi",
-    # )
-
-    # boys_std_path = Path(
-    #     who_bmi_std_path,
-    #     "bmi-boys-z-who-2007-exp.xlsx",
-    # )
-
-    # girls_std_path = Path(
-    #     who_bmi_std_path,
-    #     "bmi-girls-z-who-2007-exp.xlsx",
-    # )
-
-    # boys_lms = pd.read_excel(boys_std_path)
-    # girls_lms = pd.read_excel(girls_std_path)
-
-    # def convert_units(weight_lbs, height_inches):
-    #     weight_kg = weight_lbs * 0.453592  # Convert pounds to kg
-    #     height_m = height_inches * 0.0254  # Convert inches to meters
-    #     return weight_kg, height_m
-
-    # def calculate_bmi(weight_kg, height_m):
-    #     return weight_kg / (height_m**2)
-
-    # def get_lms_values(age_months, sex):
-    #     """Retrieves L, M, S values for a given age (months) and sex.
-    #     Sex: 1 = Male (boys_lms), 2 = Female (girls_lms).
-    #     """
-    #     lms_table = boys_lms if sex == 1 else girls_lms
-    #     row = lms_table[lms_table["Month"] == age_months]
-
-    #     if row.empty:
-    #         raise ValueError(
-    #             f"LMS values not found for age {age_months} months and sex {sex}"
-    #         )
-
-    #     return row["L"].values[0], row["M"].values[0], row["S"].values[0]
-
-    # def calculate_bmi_zscore(bmi, age_months, sex):
-    #     L, M, S = get_lms_values(age_months, sex)
-
-    #     if L == 0:
-    #         z = np.log(bmi / M) / S  # Special case when L = 0
-    #     else:
-    #         z = ((bmi / M) ** L - 1) / (L * S)
-
-    #     return z
-
-    # # Convert weight and height to metric units
-    # covariates[["weight_kg", "height_m"]] = covariates.apply(
-    #     lambda row: convert_units(row["anthroweightcalc"], row["anthroheightcalc"]),
-    #     axis=1,
-    #     result_type="expand",
-    # )
-
-    # # Calculate BMI
-    # covariates["BMI"] = covariates.apply(
-    #     lambda row: calculate_bmi(row["weight_kg"], row["height_m"]), axis=1
-    # )
-
-    # Calculate BMI z-scores
-    # covariates["BMI_zscore"] = covariates.apply(
-    #     lambda row: calculate_bmi_zscore(
-    #         row["BMI"],
-    #         row["interview_age"],
-    #         row["demo_sex_v2"],
-    #     ),
-    #     axis=1,
-    # )
-
-    # Join the covariates to the brain features ()
+    # Join the covariates to the brain features
 
     mri_all_features_cov = mri_all_features.join(
         covariates,
         how="left",
     ).dropna()
-
-    mri_all_features_cov.to_csv(
-        Path(
-            poppy_data_path,
-            "mri_all_features_cov.csv",
-        ),
-        index=True,
-    )
 
     # %% TODO: This section joins the rick factors
 
@@ -561,14 +471,6 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # 4313 removed (NOTE: you might wanna ask if this is expected)
     mri_all_features_with_prs = mri_all_features_cov.join(prs_df, how="inner")
-
-    mri_all_features_with_prs.to_csv(
-        Path(
-            poppy_data_path,
-            "mri_all_features_with_prs.csv",
-        ),
-        index=True,
-    )
 
     # %% Keep unrelated subjects
 
@@ -607,9 +509,14 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     rescaled_mri_all_features_with_prs.to_csv(
         Path(
             poppy_data_path,
-            "mri_all_features_with_prs_rescaled.csv",
+            f"mri_all_features_with_prs_rescaled-{wave}.csv",
         ),
         index=True,
+    )
+
+    print(
+        f"Sample size for wave:{wave} with MRI recommended inclusion and PRS",
+        rescaled_mri_all_features_with_prs.shape[0],
     )
 
     # %%
@@ -655,21 +562,23 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # Save (index already captured in column)
     long_data.to_csv(
-        Path(poppy_data_path, "mri_all_features_with_prs_long_rescaled.csv"), index=True
+        Path(
+            poppy_data_path,
+            f"mri_all_features_with_prs_long_rescaled-{wave}.csv",
+        ),
+        index=True,
     )
     # %%
     ### Now select the columns that are the phenotypes of interest for each modality
 
     ### Remove global features for all modality
-    t1w_cortical_thickness_rois = list(t1w_cortical_thickness_bl_pass.columns[1:-3])
+    t1w_cortical_thickness_rois = list(t1w_cortical_thickness_pass.columns[1:-3])
 
     # For cortical volume
-    t1w_cortical_volume_rois = list(t1w_cortical_volume_bl_pass.columns[1:-3])
+    t1w_cortical_volume_rois = list(t1w_cortical_volume_pass.columns[1:-3])
 
     # For surface area
-    t1w_cortical_surface_area_rois = list(
-        t1w_cortical_surface_area_bl_pass.columns[1:-3]
-    )
+    t1w_cortical_surface_area_rois = list(t1w_cortical_surface_area_pass.columns[1:-3])
 
     ### For subcortical volume
 
@@ -706,7 +615,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Step 2: Select subcortical ROIs
     t1w_subcortical_volume_rois = [
         col
-        for col in t1w_subcortical_volume_bl_pass.columns
+        for col in t1w_subcortical_volume_pass.columns
         if col not in global_subcortical_features and col != "eventname"
     ]
 
@@ -714,13 +623,13 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     FA_rois = [
         col
-        for col in dmir_fractional_anisotropy_bl_pass.columns
+        for col in dmir_fractional_anisotropy_pass.columns
         if col not in global_FA_features and col != "eventname"
     ]
 
     MD_rois = [
         col
-        for col in dmir_mean_diffusivity_bl_pass.columns
+        for col in dmir_mean_diffusivity_pass.columns
         if col not in global_MD_features and col != "eventname"
     ]
 
@@ -774,8 +683,20 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     features_for_repeated_effects_path = Path(
         poppy_data_path,
-        "bilateral_features.json",
+        "features_of_interest.json",
     )
 
     with open(features_for_repeated_effects_path, "w") as f:
         json.dump(features_of_interest, f)
+
+
+if __name__ == "__main__":
+    all_img_waves = [
+        "baseline_year_1_arm_1",
+        "2_year_follow_up_y_arm_1",
+        "4_year_follow_up_y_arm_1",
+    ]
+
+    # Process all waves
+    for wave in all_img_waves:
+        preprocess(wave=wave)

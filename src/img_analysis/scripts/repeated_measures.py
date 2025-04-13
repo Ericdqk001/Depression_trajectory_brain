@@ -20,6 +20,7 @@ cortical_features_path = Path(
     "processed_data",
     "t1w_all_cortical_features_cov_traj_long.csv",
 )
+
 cortical_feature_sets_path = Path(
     "data",
     "processed_data",
@@ -60,9 +61,6 @@ for modality in modalities:
     # Get the list of imaging features for the current modality
     imaging_features = cortical_feature_sets[modality]
 
-    # Store results for the modality
-    modality_results = []
-
     # Define covariates
     fixed_effect = [
         "demo_sex_v2",
@@ -74,12 +72,10 @@ for modality in modalities:
     ]
 
     if modality == "cortical_thickness":
-
         fixed_effect.remove("smri_vol_scs_intracranialv")
         fixed_effect.append("smri_thick_cdk_mean")
 
     if modality == "cortical_surface_area":
-
         fixed_effect.remove("smri_vol_scs_intracranialv")
         fixed_effect.append("smri_area_cdk_total")
 
