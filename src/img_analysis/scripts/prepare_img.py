@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # TODO: Check for outliers of the features (+- 5SD)
+# TODO: Check distribution of BMI z-scores
 
 
 def preprocess(wave: str = "baseline_year_1_arm_1"):
@@ -432,6 +433,25 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     mri_y_adm_info["img_device_label"] = label
 
+    # For imaging site
+    abcd_y_it_path = Path(
+        general_info_path,
+        "abcd_y_lt.csv",
+    )
+    abcd_y_it = pd.read_csv(
+        abcd_y_it_path,
+        index_col=0,
+        low_memory=False,
+    )
+
+    abcd_y_it = abcd_y_it[abcd_y_it.eventname == wave]
+
+    site_id = abcd_y_it["site_id_l"]
+
+    # Strip the "site" prefix from the site ID
+    site_id = site_id.str.replace("site", "", regex=False)
+    site_id = site_id.astype(int)
+
     # For interview_age (in months)
     abcd_y_lt_path = Path(
         general_info_path,
@@ -478,6 +498,30 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     household_income = household_income.replace([777, np.nan], 999)
 
+    # Height and weight data for BMI calculation
+
+    physical_health_path = Path(
+        core_data_path,
+        "physical-health",
+        "ph_y_anthro.csv",
+    )
+
+    physical_health = pd.read_csv(
+        physical_health_path,
+        index_col=0,
+        low_memory=False,
+    )
+
+    physical_health = physical_health[physical_health.eventname == wave]
+
+    # Select the relevant columns for height and weight
+    weight = physical_health["anthroweightcalc"]
+    height = physical_health["anthroheightcalc"]
+
+    # Drop those with zeros for height and weight (NDAR_INV46P89PTE was dropped for BL wave)
+    weight = weight[weight != 0]
+    height = height[height != 0]
+
     series_list = [
         demographics_bl.demo_sex_v2,
         mri_y_adm_info.img_device_label,
@@ -485,9 +529,87 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         abcd_y_lt.age2,
         family_id,
         household_income,
+        site_id,
+        weight,
+        height,
     ]
 
     covariates = pd.concat(series_list, axis=1).dropna()
+
+    # Calculate BMI z-score referencing to WHO growth standards
+
+    who_bmi_std_path = Path(
+        "data",
+        "raw_data",
+        "who_bmi",
+    )
+
+    boys_std_path = Path(
+        who_bmi_std_path,
+        "bmi-boys-z-who-2007-exp.xlsx",
+    )
+
+    girls_std_path = Path(
+        who_bmi_std_path,
+        "bmi-girls-z-who-2007-exp.xlsx",
+    )
+
+    boys_lms = pd.read_excel(boys_std_path)
+    girls_lms = pd.read_excel(girls_std_path)
+
+    def convert_units(weight_lbs, height_inches):
+        weight_kg = weight_lbs * 0.453592  # Convert pounds to kg
+        height_m = height_inches * 0.0254  # Convert inches to meters
+        return weight_kg, height_m
+
+    def calculate_bmi(weight_kg, height_m):
+        return weight_kg / (height_m**2)
+
+    def get_lms_values(age_months, sex):
+        """Retrieves L, M, S values for a given age (months) and sex.
+        Sex: 1 = Male (boys_lms), 2 = Female (girls_lms).
+        """
+        lms_table = boys_lms if sex == 1 else girls_lms
+        row = lms_table[lms_table["Month"] == age_months]
+
+        if row.empty:
+            raise ValueError(
+                f"LMS values not found for age {age_months} months and sex {sex}"
+            )
+
+        return row["L"].values[0], row["M"].values[0], row["S"].values[0]
+
+    def calculate_bmi_zscore(bmi, age_months, sex):
+        L, M, S = get_lms_values(age_months, sex)
+
+        if L == 0:
+            z = np.log(bmi / M) / S  # Special case when L = 0
+        else:
+            z = ((bmi / M) ** L - 1) / (L * S)
+
+        return z
+
+    # Convert weight and height to metric units
+    covariates[["weight_kg", "height_m"]] = covariates.apply(
+        lambda row: convert_units(row["anthroweightcalc"], row["anthroheightcalc"]),
+        axis=1,
+        result_type="expand",
+    )
+
+    # Calculate BMI
+    covariates["BMI"] = covariates.apply(
+        lambda row: calculate_bmi(row["weight_kg"], row["height_m"]), axis=1
+    )
+
+    # Calculate BMI z-scores
+    covariates["BMI_zscore"] = covariates.apply(
+        lambda row: calculate_bmi_zscore(
+            row["BMI"],
+            row["interview_age"],
+            row["demo_sex_v2"],
+        ),
+        axis=1,
+    )
 
     # Join the covariates to the brain features
 
