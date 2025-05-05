@@ -10,6 +10,8 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 
 def preprocess(wave: str = "baseline_year_1_arm_1"):
+    print("-----------------------")
+    print("Processing wave: ", wave)
     # %%
     poppy_data_path = Path(
         "data",
@@ -67,12 +69,16 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         low_memory=False,
     )
 
-    mri_y_qc_incl_bl = mri_y_qc_incl[mri_y_qc_incl.eventname == wave]
+    mri_y_qc_incl = mri_y_qc_incl[mri_y_qc_incl.eventname == wave]
+
+    print("Sample size with MRI recommended inclusion", mri_y_qc_incl.shape[0])
 
     # Remove subjects with intersex from the imaging data
-    mri_y_qc_incl_bl = mri_y_qc_incl_bl[~mri_y_qc_incl_bl.index.isin(inter_sex_subs)]
+    mri_y_qc_incl = mri_y_qc_incl[~mri_y_qc_incl.index.isin(inter_sex_subs)]
 
-    print("Sample size with MRI recommended inclusion", mri_y_qc_incl_bl.shape[0])
+    print(
+        "Remove intersex subjects from the imaging data, number = ", len(inter_sex_subs)
+    )
 
     # %%
     ### Remove imaging data with data quality issues, overall MRI clinical report is used
@@ -98,17 +104,27 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     mri_clin_report_bl = mri_clin_report[mri_clin_report.eventname == wave]
 
     qc_passed_indices = list(
-        mri_y_qc_incl_bl[
-            (mri_y_qc_incl_bl.imgincl_t1w_include == 1)
-            & (mri_y_qc_incl_bl.imgincl_dmri_include == 1)
+        mri_y_qc_incl[
+            (mri_y_qc_incl.imgincl_t1w_include == 1)
+            & (mri_y_qc_incl.imgincl_dmri_include == 1)
         ].index
     )
 
     qc_passed_mask = mri_clin_report_bl.index.isin(qc_passed_indices)
 
+    print(
+        "Sample size after QC passed, number = ",
+        mri_clin_report_bl[qc_passed_mask].shape[0],
+    )
+
     score_mask = mri_clin_report_bl.mrif_score < 3
 
     subs_pass = mri_clin_report_bl[qc_passed_mask & score_mask]
+
+    print(
+        "sample size after QC passed and clinical report (score < 3), number = ",
+        subs_pass.shape[0],
+    )
 
     ###
 
@@ -191,12 +207,22 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         mri_y_smr_thk_dst.index.isin(subs_pass.index)
     ].dropna()
 
+    print(
+        "Sample size with complete CT data after QC, number =",
+        t1w_cortical_thickness_pass.shape[0],
+    )
+
     # Cortical volume data
     mri_y_smr_vol_dst = mri_y_smr_vol_dst[mri_y_smr_vol_dst.eventname == wave]
 
     t1w_cortical_volume_pass = mri_y_smr_vol_dst[
         mri_y_smr_vol_dst.index.isin(subs_pass.index)
     ].dropna()
+
+    print(
+        "Sample size with complete CV data after QC, number =",
+        t1w_cortical_volume_pass.shape[0],
+    )
 
     # Cortical surface area data
 
@@ -205,6 +231,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     t1w_cortical_surface_area_pass = mri_y_smr_area_dst[
         mri_y_smr_area_dst.index.isin(subs_pass.index)
     ].dropna()
+
+    print(
+        "Sample size with complete SA data after QC, number =",
+        t1w_cortical_surface_area_pass.shape[0],
+    )
 
     # Subcortical volume
 
@@ -215,14 +246,25 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     ]
 
     # NOTE: These columns were dropped because they had all missing values or all zeros
+
+    subcortical_all_zeros_cols = [
+        "smri_vol_scs_lesionlh",
+        "smri_vol_scs_lesionrh",
+        "smri_vol_scs_wmhintlh",
+        "smri_vol_scs_wmhintrh",
+    ]
+
     t1w_subcortical_volume_pass = t1w_subcortical_volume_pass.drop(
-        columns=[
-            "smri_vol_scs_lesionlh",
-            "smri_vol_scs_lesionrh",
-            "smri_vol_scs_wmhintlh",
-            "smri_vol_scs_wmhintrh",
-        ]
+        columns=subcortical_all_zeros_cols
     ).dropna()
+
+    print("Subcortical all zeros columns dropped")
+    print("Column names: ", subcortical_all_zeros_cols)
+
+    print(
+        "Sample size with complete subcortical volume data after QC, number =",
+        t1w_subcortical_volume_pass.shape[0],
+    )
 
     # # Add tracts data (mri_y_dti_fa_fs_at (FA), mri_y_dti_md_fs_at(MD))
 
@@ -236,9 +278,19 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         dmir_fractional_anisotropy.index.isin(subs_pass.index)
     ].dropna()
 
+    print(
+        "Sample size with complete FA data after QC, number =",
+        dmir_fractional_anisotropy_pass.shape[0],
+    )
+
     dmir_mean_diffusivity_pass = dmir_mean_diffusivity[
         dmir_mean_diffusivity.index.isin(subs_pass.index)
     ].dropna()
+
+    print(
+        "Sample size with complete MD data after QC, number =",
+        dmir_mean_diffusivity_pass.shape[0],
+    )
 
     # Rename the FA and DM features to have "lh" or "rh" suffixes
 
@@ -337,7 +389,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         inplace=True,
     )
 
-    # Combine the all the modalities
+    # Combine all the modalities
 
     mri_all_features = pd.concat(
         [
@@ -350,6 +402,8 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         ],
         axis=1,
     )
+
+    print("Sample size with all imaging features, number = ", mri_all_features.shape[0])
 
     # Drop eventname column
     mri_all_features = mri_all_features.drop(columns="eventname")
@@ -453,6 +507,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         how="left",
     ).dropna()
 
+    print(
+        "Sample size with all imaging features and covariates, number = ",
+        mri_all_features_cov.shape[0],
+    )
+
     # %% TODO: This section joins the rick factors
 
     PRS_path = Path(
@@ -472,6 +531,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # 4313 removed (NOTE: you might wanna ask if this is expected)
     mri_all_features_with_prs = mri_all_features_cov.join(prs_df, how="inner")
 
+    print(
+        "Sample size with all imaging features and covariates and PRS, number = ",
+        mri_all_features_with_prs.shape[0],
+    )
+
     # %% Keep unrelated subjects
 
     seed = 42
@@ -481,6 +545,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
             lambda x: x.sample(n=1, random_state=seed).index[0]
         ),
     ]
+
+    print(
+        "Sample size after keeping unrelated subjects, number = ",
+        mri_all_features_with_prs.shape[0],
+    )
 
     # Standardize the continuous variables
 
@@ -515,7 +584,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     )
 
     print(
-        f"Sample size for wave:{wave} with MRI recommended inclusion and PRS",
+        f"Final Sample size for wave:{wave}",
         rescaled_mri_all_features_with_prs.shape[0],
     )
 
