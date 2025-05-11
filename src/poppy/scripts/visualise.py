@@ -10,7 +10,10 @@ from statsmodels.stats.multitest import fdrcorrection
 def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
     # File paths
     repeated_bilateral_prs_results_path = Path(
-        "src", "poppy", "analysis_results", f"repeated_bilateral_prs_results-{wave}.csv"
+        "src",
+        "poppy",
+        "analysis_results",
+        f"repeated_bilateral_prs_results-{wave}.csv",
     )
     unilateral_features_glm_results_path = Path(
         "src",
@@ -19,7 +22,10 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
         f"unilateral_features_glm_results-{wave}.csv",
     )
     sig_hemi_features_glm_results_path = Path(
-        "src", "poppy", "analysis_results", f"sig_hemi_features_glm_results-{wave}.csv"
+        "src",
+        "poppy",
+        "analysis_results",
+        f"sig_hemi_features_glm_results-{wave}.csv",
     )
 
     # Read in results
