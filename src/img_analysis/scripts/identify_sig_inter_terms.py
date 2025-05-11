@@ -24,7 +24,7 @@ def identify_sig_inter_terms(wave: str = "baseline_year_1_arm_1"):
     # File paths
     features_path = Path(
         "data",
-        "poppy",
+        "processed_data",
         f"mri_all_features_with_traj_long_rescaled-{wave}.csv",
     )
 

@@ -170,3 +170,5 @@ src/poppy/analysis_results/
 
 # mac
 .DS_Store
+
+src/img_analysis/analysis_results

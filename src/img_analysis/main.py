@@ -1,27 +1,19 @@
-import subprocess
-
-from src.poppy.scripts.prepare_img import preprocess
-
-
-def run_r_model(wave: str):
-    try:
-        # Run the R script with the wave as an argument
-        subprocess.run(
-            ["Rscript", "src/img_analysis/scripts/rep_measure_analysis.R", wave],
-            check=True,
-        )
-
-        print(f"R modeling completed for {wave}")
-    except subprocess.CalledProcessError as e:
-        print(f"R modeling failed for {wave}: {e}")
+from src.img_analysis.scripts.identify_sig_inter_terms import identify_sig_inter_terms
+from src.img_analysis.scripts.prepare_img import preprocess
+from src.img_analysis.scripts.rep_measure_analysis import (
+    perform_repeated_measures_analysis,
+)
 
 
 def main(wave):
     # Step 1: Preprocessing
     preprocess(wave=wave)
 
-    # Step 2: R modeling
-    run_r_model(wave=wave)
+    # Step 2: modeling
+    perform_repeated_measures_analysis(wave=wave)
+
+    # Step 3: check significant interactions (hemisphere x class)
+    identify_sig_inter_terms(wave=wave)
 
 
 if __name__ == "__main__":

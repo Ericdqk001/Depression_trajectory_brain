@@ -1,11 +1,9 @@
 import json
 import logging
-import warnings
 from pathlib import Path
 
 import pandas as pd
-import statsmodels.formula.api as smf
-from statsmodels.tools.sm_exceptions import ConvergenceWarning
+from pymer4.models import Lmer
 
 logging.basicConfig(
     filename="model_fitting.log",
@@ -48,29 +46,32 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
     with open(feature_sets_path, "r") as f:
         feature_sets = json.load(f)
 
-    # Set categorical variables
-    features_df["demo_sex_v2"] = features_df["demo_sex_v2"].astype("category")
-    features_df["img_device_label"] = features_df["img_device_label"].astype("category")
-
-    # trajectory variable of interest
-    traj_class = "C(class_label)"
+    # Convert categorical variables
+    for col in [
+        "class_label",
+        "demo_sex_v2",
+        "img_device_label",
+        "hemisphere",
+        "site_id_l",
+        "rel_family_id",
+    ]:
+        features_df[col] = features_df[col].astype(str).astype("category")
 
     # Effects of interest
-    effects_to_save = [
-        "C(class_label)[T.1.0]",
-        "C(class_label)[T.2.0]",
-        "C(class_label)[T.3.0]",
-        "hemisphere[T.Right]:C(class_label)[T.1.0]",
-        "hemisphere[T.Right]:C(class_label)[T.2.0]",
-        "hemisphere[T.Right]:C(class_label)[T.3.0]",
+    effects_of_interest = [
+        "class_label1.0",
+        "class_label2.0",
+        "class_label3.0",
+        "hemisphereRight:class_label1.0",
+        "hemisphereRight:class_label2.0",
+        "hemisphereRight:class_label3.0",
     ]
-
     # Store results here
     results_list = []
 
     # Loop over each modality
     for modality in modalities:
-        print(f"Processing {modality}")
+        print(f"🔍 Processing modality: {modality}")
         roi_list = feature_sets[modality]
 
         # Fixed effects to include
@@ -80,6 +81,7 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
             "demo_sex_v2",
             "img_device_label",
             "demo_comb_income_v2",
+            "BMI_zscore",
         ]
 
         if modality == "bilateral_cortical_thickness":
@@ -100,57 +102,26 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
         elif modality == "bilateral_tract_MD":
             fixed_effects.append("MD_all_dti_atlas_tract_fibers")
 
-        for feature in roi_list:
-            print(f"Fitting model for: {feature}")
-
-            # Mixed-effects model formula with PRS x hemisphere interaction
-            formula = (
-                f"{feature} ~ hemisphere * {traj_class} + {' + '.join(fixed_effects)}"
-            )
-
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always", ConvergenceWarning)
-
-                try:
-                    model = smf.mixedlm(
-                        formula=formula,
-                        data=features_df,
-                        groups=features_df["src_subject_id"],
-                        # Random intercept for family nested within sites
-                        vc_formula={"label_site:rel_family_id": "1"},
-                    ).fit()
-
-                    # Log any convergence warnings
-                    for warning in w:
-                        if issubclass(warning.category, ConvergenceWarning):
-                            logging.warning(
-                                f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
-                            )
-
-                except Exception as e:
-                    logging.error(
-                        f"Model failed for {feature} in {modality} for {wave}: {e}"
-                    )
-                    continue
+        for feature in roi_list[:1]:
+            print(f"🧠 Fitting model for feature: {feature}")
+            formula = f"{feature} ~ hemisphere * class_label + {' + '.join(fixed_effects)} + (1|src_subject_id) + (1|site_id_l:rel_family_id)"
+            try:
+                model = Lmer(formula, data=features_df)
+                model.fit(summarize=False)
+            except Exception as e:
+                logging.error(
+                    f"Model failed for {feature} in {modality} for {wave}: {e}"
+                )
+                continue
 
             # Save both main trajectory class effect and hemisphere interaction
-            for effect in effects_to_save:
-                if effect in model.params.index:
-                    coef = model.params[effect]
-                    pval = model.pvalues[effect]
-                    ci_low, ci_high = model.conf_int().loc[effect].values
+            coefs = model.coefs
+            # Filter by index (effect names)
+            coefs = coefs.loc[coefs.index.isin(effects_of_interest)].copy()
+            coefs["modality"] = modality
+            coefs["feature"] = feature
 
-                    results_list.append(
-                        {
-                            "modality": modality,
-                            "feature": feature,
-                            "predictor": effect,
-                            "coefficient": coef,
-                            "p_value": pval,
-                            "CI_lower": ci_low,
-                            "CI_upper": ci_high,
-                        }
-                    )
+            results_list.append(coefs)
 
     # Create results directory
     results_path = Path(
@@ -162,7 +133,7 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
     results_path.mkdir(parents=True, exist_ok=True)
 
     # Save results as CSV
-    results_df = pd.DataFrame(results_list)
+    results_df = pd.concat(results_list, ignore_index=False)
     results_df.to_csv(
         Path(
             results_path,
