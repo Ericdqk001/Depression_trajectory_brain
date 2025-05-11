@@ -134,7 +134,7 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
     results_path.mkdir(parents=True, exist_ok=True)
 
     # Save results as CSV
-    results_df = pd.concat(results_list, ignore_index=False)
+    results_df = pd.concat(results_list, ignore_index=True)
     results_df.to_csv(
         Path(
             results_path,
