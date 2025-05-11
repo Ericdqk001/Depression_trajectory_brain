@@ -17,26 +17,11 @@ def identify_sig_inter_terms(wave: str = "baseline_year_1_arm_1"):
 
     interaction_term = "hemisphere[T.Right]:aoDEP_SBayesR"
 
-    # File paths
-    features_path = Path(
-        "data",
-        "poppy",
-        f"mri_all_features_with_prs_long_rescaled-{wave}.csv",
-    )
-
     results_path = Path(
         "src",
         "poppy",
         "analysis_results",
     )
-
-    # Load data
-    features_df = pd.read_csv(features_path, low_memory=False)
-
-    # Categorical columns
-    features_df["demo_sex_v2"] = features_df["demo_sex_v2"].astype("category")
-    features_df["img_device_label"] = features_df["img_device_label"].astype("category")
-    features_df["rel_family_id"] = features_df["rel_family_id"].astype("category")
 
     # Load results
     repeated_results = pd.read_csv(

@@ -118,6 +118,7 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
             coefs = model.coefs
             # Filter by index (effect names)
             coefs = coefs.loc[coefs.index.isin(effects_of_interest)].copy()
+            coefs = coefs.reset_index().rename(columns={"index": "effect_name"})
             coefs["modality"] = modality
             coefs["feature"] = feature
 

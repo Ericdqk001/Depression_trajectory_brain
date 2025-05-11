@@ -15,32 +15,11 @@ def identify_sig_inter_terms(wave: str = "baseline_year_1_arm_1"):
         "bilateral_tract_MD",
     ]
 
-    interaction_terms = [
-        "hemisphere[T.Right]:C(class_label)[T.1.0]",
-        "hemisphere[T.Right]:C(class_label)[T.2.0]",
-        "hemisphere[T.Right]:C(class_label)[T.3.0]",
-    ]
-
-    # File paths
-    features_path = Path(
-        "data",
-        "processed_data",
-        f"mri_all_features_with_traj_long_rescaled-{wave}.csv",
-    )
-
     results_path = Path(
         "src",
-        "processed_data",
+        "img_analysis",
         "analysis_results",
     )
-
-    # Load data
-    features_df = pd.read_csv(features_path, low_memory=False)
-
-    # Categorical columns
-    features_df["demo_sex_v2"] = features_df["demo_sex_v2"].astype("category")
-    features_df["img_device_label"] = features_df["img_device_label"].astype("category")
-    features_df["rel_family_id"] = features_df["rel_family_id"].astype("category")
 
     # Load results
     repeated_results = pd.read_csv(
@@ -52,49 +31,39 @@ def identify_sig_inter_terms(wave: str = "baseline_year_1_arm_1"):
 
     significant_features_by_modality = {}
 
+    # The interaction terms of interest (as in rep_measure_analysis.py)
+    interaction_terms = [
+        "hemisphereRight:class_label1.0",
+        "hemisphereRight:class_label2.0",
+        "hemisphereRight:class_label3.0",
+    ]
+
     for modality in modalities:
-        # Filter results by modality
-        modality_df = repeated_results[repeated_results["modality"] == modality]
+        modality_df = repeated_results[
+            (repeated_results["modality"] == modality)
+            & (repeated_results["effect_name"].isin(interaction_terms))
+        ]
 
-        modality_significant = []
+        if not modality_df.empty:
+            # Apply FDR correction
+            pvals = modality_df["P-val"].values
 
-        for interaction_term in interaction_terms:
-            inter_df = modality_df[modality_df["predictor"] == interaction_term]
+            rejected, qvals, _, _ = multipletests(pvals, alpha=0.05, method="fdr_bh")
 
-            if not inter_df.empty:
-                # Apply FDR correction
-                pvals = inter_df["p_value"].values
-                rejected, qvals, _, _ = multipletests(
-                    pvals, alpha=0.05, method="fdr_bh"
-                )
+            modality_df = modality_df.copy()
+            modality_df["q_value"] = qvals
+            modality_df["significant"] = rejected
 
-                inter_df = inter_df.copy()
-                inter_df["q_value"] = qvals
-                inter_df["significant"] = rejected
+            # Filter significant
+            significant = modality_df[modality_df["significant"]]
 
-                # Get significant features
-                sig_df = inter_df[inter_df["significant"]]
-
-                for _, row in sig_df.iterrows():
-                    modality_significant.append(
-                        {
-                            "feature": row["feature"],
-                            "interaction_term": interaction_term,
-                        }
-                    )
-
-        if modality_significant:
-            significant_features_by_modality[modality] = modality_significant
+            significant_features_by_modality[modality] = significant["feature"].tolist()
 
     # Print results
-    for modality, features_info in significant_features_by_modality.items():
-        print(f"\n{modality}:")
-        for info in features_info:
-            print(
-                f"  Feature: {info['feature']}, Interaction: {info['interaction_term']}"
-            )
+    for modality, features in significant_features_by_modality.items():
+        print(f"{modality}: {features}")
 
-    # Save results to JSON
+    # Save results to json
     with open(
         Path(
             results_path,
@@ -103,3 +72,7 @@ def identify_sig_inter_terms(wave: str = "baseline_year_1_arm_1"):
         "w",
     ) as f:
         json.dump(significant_features_by_modality, f, indent=4)
+
+
+if __name__ == "__main__":
+    identify_sig_inter_terms()
