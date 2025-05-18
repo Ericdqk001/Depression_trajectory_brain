@@ -33,9 +33,9 @@ def identify_sig_inter_terms(wave: str = "baseline_year_1_arm_1"):
 
     # The interaction terms of interest (as in rep_measure_analysis.py)
     interaction_terms = [
-        "hemisphereRight:class_label1.0",
-        "hemisphereRight:class_label2.0",
-        "hemisphereRight:class_label3.0",
+        "hemisphereRight:class_label1",
+        "hemisphereRight:class_label2",
+        "hemisphereRight:class_label3",
     ]
 
     for modality in modalities:

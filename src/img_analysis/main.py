@@ -5,13 +5,14 @@ from src.img_analysis.scripts.model_bilateral import (
 from src.img_analysis.scripts.model_unilateral import (
     perform_unilateral,
 )
+from src.img_analysis.scripts.prepare_img import preprocess
 from src.img_analysis.scripts.visualise import visualise_effect_size
 
 
 def main(wave):
     # Step 1: Preprocessing
-    # print(f"Preprocessing data for {wave}...")
-    # preprocess(wave=wave)
+    print(f"Preprocessing data for {wave}...")
+    preprocess(wave=wave)
 
     # Step 2: Modeling for bilateral features
     print(f"Performing repeated measures analysis for {wave}...")
@@ -32,9 +33,9 @@ def main(wave):
 
 if __name__ == "__main__":
     all_img_waves = [
-        # "baseline_year_1_arm_1",
+        "baseline_year_1_arm_1",
         "2_year_follow_up_y_arm_1",
-        # "4_year_follow_up_y_arm_1",
+        "4_year_follow_up_y_arm_1",
     ]
     for wave in all_img_waves:
         print(f"Running full pipeline for {wave}...")

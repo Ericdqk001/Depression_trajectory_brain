@@ -102,7 +102,7 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
         elif modality == "bilateral_tract_MD":
             fixed_effects.append("MD_all_dti_atlas_tract_fibers")
 
-        for feature in roi_list[:5]:
+        for feature in roi_list:
             if feature not in features_df.columns:
                 print(f"Feature {feature} not found in columns for {wave}")
                 continue
@@ -129,7 +129,7 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
             coefs["feature"] = feature
 
             results_list.append(coefs)
-            print(results_list)
+            # print(results_list)
 
     # Create results directory
     results_path = Path(

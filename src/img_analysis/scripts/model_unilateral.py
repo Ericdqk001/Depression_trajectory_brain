@@ -67,7 +67,7 @@ def perform_unilateral(wave: str = "baseline_year_1_arm_1"):
             fixed_effects.append("MD_all_dti_atlas_tract_fibers")
         features = feature_dict[modality]
 
-        for feature in features[:5]:
+        for feature in features:
             if feature in features_df.columns:
                 formula = f"{feature} ~ {target_feature} + {' + '.join(fixed_effects)} + (1|site_id_l:rel_family_id)"
                 print(f"\nFitting Lmer for {feature} in {modality}")

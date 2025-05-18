@@ -37,7 +37,7 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
         sig_hemi_df = pd.read_csv(sig_hemi_features_glm_results_path)
     else:
         sig_hemi_df = pd.DataFrame()
-        
+
     if sig_hemi_df.empty:
         print("No significant hemispheric features found.")
         combined_df = pd.concat([bilateral_df, unilateral_df], ignore_index=True)
@@ -48,9 +48,9 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
 
     # Filter to class_label effects only (assume effect_name column contains class_labelX.X)
     class_label_effects = [
-        "class_label1.0",
-        "class_label2.0",
-        "class_label3.0",
+        "class_label1",
+        "class_label2",
+        "class_label3",
     ]
     combined_df = combined_df[
         combined_df["effect_name"].isin(class_label_effects)
