@@ -59,12 +59,12 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
 
     # Effects of interest
     effects_of_interest = [
-        "class_label1.0",
-        "class_label2.0",
-        "class_label3.0",
-        "hemisphereRight:class_label1.0",
-        "hemisphereRight:class_label2.0",
-        "hemisphereRight:class_label3.0",
+        "class_label1",
+        "class_label2",
+        "class_label3",
+        "hemisphereRight:class_label1",
+        "hemisphereRight:class_label2",
+        "hemisphereRight:class_label3",
     ]
     # Store results here
     results_list = []
@@ -102,13 +102,17 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
         elif modality == "bilateral_tract_MD":
             fixed_effects.append("MD_all_dti_atlas_tract_fibers")
 
-        for feature in roi_list[:1]:
+        for feature in roi_list[:5]:
+            if feature not in features_df.columns:
+                print(f"Feature {feature} not found in columns for {wave}")
+                continue
             print(f"🧠 Fitting model for feature: {feature}")
             formula = f"{feature} ~ hemisphere * class_label + {' + '.join(fixed_effects)} + (1|src_subject_id) + (1|site_id_l:rel_family_id)"
             try:
                 model = Lmer(formula, data=features_df)
                 model.fit(summarize=False)
             except Exception as e:
+                print(f"Model failed for {feature} in {modality} for {wave}: {e}")
                 logging.error(
                     f"Model failed for {feature} in {modality} for {wave}: {e}"
                 )
@@ -116,6 +120,8 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
 
             # Save both main trajectory class effect and hemisphere interaction
             coefs = model.coefs
+
+            # print(coefs)
             # Filter by index (effect names)
             coefs = coefs.loc[coefs.index.isin(effects_of_interest)].copy()
             coefs = coefs.reset_index().rename(columns={"index": "effect_name"})
@@ -123,6 +129,7 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
             coefs["feature"] = feature
 
             results_list.append(coefs)
+            print(results_list)
 
     # Create results directory
     results_path = Path(
@@ -144,9 +151,10 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
     )
 
     print(f"Repeated analysis complete for {wave}. Results saved to:")
-    print(results_path / f"repeated_bilateral_raj_results-{wave}.csv")
+    print(results_path / f"repeated_bilateral_traj_results-{wave}.csv")
 
 
 if __name__ == "__main__":
-    # Run the analysis for the baseline year 1 arm 1
-    perform_repeated_measures_analysis(wave="baseline_year_1_arm_1")
+    wave = "2_year_follow_up_y_arm_1"
+
+    perform_repeated_measures_analysis(wave=wave)

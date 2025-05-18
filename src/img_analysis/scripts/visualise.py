@@ -32,7 +32,12 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
     # Read in results
     bilateral_df = pd.read_csv(repeated_bilateral_results_path)
     unilateral_df = pd.read_csv(unilateral_features_results_path)
-    sig_hemi_df = pd.read_csv(sig_hemi_features_glm_results_path)
+
+    if sig_hemi_features_glm_results_path.exists():
+        sig_hemi_df = pd.read_csv(sig_hemi_features_glm_results_path)
+    else:
+        sig_hemi_df = pd.DataFrame()
+        
     if sig_hemi_df.empty:
         print("No significant hemispheric features found.")
         combined_df = pd.concat([bilateral_df, unilateral_df], ignore_index=True)
@@ -80,14 +85,6 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
     }
 
     combined_df["modality"] = combined_df["modality"].map(modality_map)
-
-    # Validate modality mapping
-    if combined_df["modality"].isnull().any():
-        unknown_modalities = combined_df.loc[
-            combined_df["modality"].isnull(), "modality"
-        ].unique()
-        warnings.warn(f"Unrecognized modality values found: {unknown_modalities}")
-        sys.exit("Visualisation aborted due to unknown modalities.")
 
     # Assign colors
     modality_palette = {

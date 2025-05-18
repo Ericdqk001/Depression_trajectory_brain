@@ -676,6 +676,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Remove missing values
     t1w_all_cortical_features_cov_traj = t1w_all_cortical_features_cov_traj.dropna()
 
+    # Make sure the class_label is an integer
+    t1w_all_cortical_features_cov_traj["class_label"] = (
+        t1w_all_cortical_features_cov_traj["class_label"].astype(pd.Int64Dtype())
+    )
+
     t1w_all_cortical_features_cov_traj.to_csv(
         Path(
             processed_data_path,
