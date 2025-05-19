@@ -226,10 +226,13 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
         )
         plt.tight_layout()
 
-        plt.savefig(
-            analysis_results_path / f"class_label_{class_label}_plot-{wave}.png",
-            dpi=300,
+        output_dir = Path(
+            "src",
+            "image_analysis",
+            "images",
         )
+        output_dir.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_dir / f"class_label_{class_label}_plot-{wave}.png", dpi=300)
         plt.show()
 
 

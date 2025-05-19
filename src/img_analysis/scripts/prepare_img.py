@@ -387,18 +387,18 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     )
 
     # Drop these columns because they are duplicates with a slightly different regional focus
-    FA_cols_to_drop = [
-        "FA_dti_atlas_tract_fornix_excluding_fimbrialh",
-        "FA_dti_atlas_tract_fornix_excluding_fimbriarh",
-        "FA_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlylh",
-        "FA_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlyrh",
-        "FA_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlylh",
-        "FA_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
-    ]
+    # FA_cols_to_drop = [
+    #     "FA_dti_atlas_tract_fornix_excluding_fimbrialh",
+    #     "FA_dti_atlas_tract_fornix_excluding_fimbriarh",
+    #     "FA_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlylh",
+    #     "FA_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlyrh",
+    #     "FA_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlylh",
+    #     "FA_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
+    # ]
 
-    dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.drop(
-        columns=FA_cols_to_drop
-    )
+    # dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.drop(
+    #     columns=FA_cols_to_drop
+    # )
 
     dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.dropna()
 
@@ -412,18 +412,18 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         inplace=True,
     )
 
-    MD_cols_to_drop = [
-        "MD_dti_atlas_tract_fornix_excluding_fimbrialh",
-        "MD_dti_atlas_tract_fornix_excluding_fimbriarh",
-        "MD_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlylh",
-        "MD_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlyrh",
-        "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlylh",
-        "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
-    ]
+    # MD_cols_to_drop = [
+    #     "MD_dti_atlas_tract_fornix_excluding_fimbrialh",
+    #     "MD_dti_atlas_tract_fornix_excluding_fimbriarh",
+    #     "MD_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlylh",
+    #     "MD_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlyrh",
+    #     "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlylh",
+    #     "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
+    # ]
 
-    dmir_mean_diffusivity_pass = dmir_mean_diffusivity_pass.drop(
-        columns=MD_cols_to_drop
-    )
+    # dmir_mean_diffusivity_pass = dmir_mean_diffusivity_pass.drop(
+    #     columns=MD_cols_to_drop
+    # )
 
     dmir_mean_diffusivity_pass = dmir_mean_diffusivity_pass.dropna()
 
