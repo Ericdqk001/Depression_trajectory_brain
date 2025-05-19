@@ -5,7 +5,9 @@ import pandas as pd
 from statsmodels.stats.multitest import multipletests
 
 
-def identify_sig_inter_terms(wave: str = "baseline_year_1_arm_1"):
+def identify_sig_inter_terms(
+    wave: str = "baseline_year_1_arm_1", results_number: int = 1
+):
     modalities = [
         "bilateral_cortical_thickness",
         "bilateral_cortical_volume",
@@ -18,7 +20,8 @@ def identify_sig_inter_terms(wave: str = "baseline_year_1_arm_1"):
     results_path = Path(
         "src",
         "img_analysis",
-        "analysis_results",
+        "results",
+        f"exp_{results_number}",
     )
 
     # Load results

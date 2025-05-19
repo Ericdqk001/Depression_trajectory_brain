@@ -9,26 +9,26 @@ from src.img_analysis.scripts.prepare_img import preprocess
 from src.img_analysis.scripts.visualise import visualise_effect_size
 
 
-def main(wave):
+def main(wave, results_number=1):
     # Step 1: Preprocessing
     print(f"Preprocessing data for {wave}...")
     preprocess(wave=wave)
 
     # Step 2: Modeling for bilateral features
     print(f"Performing repeated measures analysis for {wave}...")
-    perform_repeated_measures_analysis(wave=wave)
+    perform_repeated_measures_analysis(wave=wave, results_number=results_number)
 
     # Step 3: Check significant interactions (hemisphere x class)
     print(f"Identifying significant interaction terms for {wave}...")
-    identify_sig_inter_terms(wave=wave)
+    identify_sig_inter_terms(wave=wave, results_number=results_number)
 
     # Step 4:Modeling for unilateral features
     print(f"Performing unilateral analysis for {wave}...")
-    perform_unilateral(wave=wave)
+    perform_unilateral(wave=wave, results_number=results_number)
 
     # Step 5: Visualize effect sizes
     print(f"Visualizing effect sizes for {wave}...")
-    visualise_effect_size(wave=wave)
+    visualise_effect_size(wave=wave, results_number=results_number)
 
 
 if __name__ == "__main__":

@@ -7,25 +7,29 @@ import pandas as pd
 from statsmodels.stats.multitest import fdrcorrection
 
 
-def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
+def visualise_effect_size(
+    wave: str = "baseline_year_1_arm_1",
+    results_number: int = 1,
+):
     # File paths
 
-    analysis_results_path = Path(
+    results_path = Path(
         "src",
         "img_analysis",
         "analysis_results",
+        f"exp_{results_number}",
     )
 
     repeated_bilateral_results_path = Path(
-        analysis_results_path,
+        results_path,
         f"repeated_bilateral_traj_results-{wave}.csv",
     )
     unilateral_features_results_path = Path(
-        analysis_results_path,
+        results_path,
         f"unilateral_features_results-{wave}.csv",
     )
     sig_hemi_features_glm_results_path = Path(
-        analysis_results_path,
+        results_path,
         f"sig_hemi_features_results-{wave}.csv",
     )
 
@@ -227,8 +231,7 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
         plt.tight_layout()
 
         output_dir = Path(
-            "src",
-            "image_analysis",
+            results_path,
             "images",
         )
         output_dir.mkdir(parents=True, exist_ok=True)

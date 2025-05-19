@@ -5,7 +5,10 @@ import pandas as pd
 from pymer4.models import Lmer
 
 
-def perform_unilateral(wave: str = "baseline_year_1_arm_1"):
+def perform_unilateral(
+    wave: str = "baseline_year_1_arm_1",
+    results_number: int = 1,
+):
     data_path = Path(
         "data",
         "processed_data",
@@ -20,6 +23,7 @@ def perform_unilateral(wave: str = "baseline_year_1_arm_1"):
         "src",
         "img_analysis",
         "analysis_results",
+        f"exp_{results_number}",
     )
     # === Load data ===
     features_df = pd.read_csv(
