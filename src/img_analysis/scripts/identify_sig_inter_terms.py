@@ -20,7 +20,7 @@ def identify_sig_inter_terms(
     results_path = Path(
         "src",
         "img_analysis",
-        "results",
+        "experiments",
         f"exp_{results_number}",
     )
 

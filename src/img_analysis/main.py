@@ -5,14 +5,13 @@ from src.img_analysis.scripts.model_bilateral import (
 from src.img_analysis.scripts.model_unilateral import (
     perform_unilateral,
 )
-from src.img_analysis.scripts.prepare_img import preprocess
 from src.img_analysis.scripts.visualise import visualise_effect_size
 
 
 def main(wave, results_number=1):
     # Step 1: Preprocessing
     print(f"Preprocessing data for {wave}...")
-    preprocess(wave=wave)
+    # preprocess(wave=wave)
 
     # Step 2: Modeling for bilateral features
     print(f"Performing repeated measures analysis for {wave}...")

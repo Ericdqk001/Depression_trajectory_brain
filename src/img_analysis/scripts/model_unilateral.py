@@ -22,7 +22,7 @@ def perform_unilateral(
     results_path = Path(
         "src",
         "img_analysis",
-        "analysis_results",
+        "experiments",
         f"exp_{results_number}",
     )
     # === Load data ===

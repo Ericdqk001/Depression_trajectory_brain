@@ -138,7 +138,7 @@ def perform_repeated_measures_analysis(
     results_path = Path(
         "src",
         "img_analysis",
-        "results",
+        "experiments",
         f"exp_{results_number}",
     )
 

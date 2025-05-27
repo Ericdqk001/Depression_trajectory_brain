@@ -172,3 +172,5 @@ src/poppy/analysis_results/
 .DS_Store
 
 src/img_analysis/analysis_results
+
+src/img_analysis/experiments/

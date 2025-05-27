@@ -16,7 +16,7 @@ def visualise_effect_size(
     results_path = Path(
         "src",
         "img_analysis",
-        "analysis_results",
+        "experiments",
         f"exp_{results_number}",
     )
 
