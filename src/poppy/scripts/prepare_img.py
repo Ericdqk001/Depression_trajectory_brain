@@ -274,23 +274,14 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     dmir_mean_diffusivity = mri_y_dti_md_fs_at[mri_y_dti_md_fs_at.eventname == wave]
 
+    # Dropna later because some columns will be removed
     dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy[
         dmir_fractional_anisotropy.index.isin(subs_pass.index)
-    ].dropna()
-
-    print(
-        "Sample size with complete FA data after QC, number =",
-        dmir_fractional_anisotropy_pass.shape[0],
-    )
+    ]
 
     dmir_mean_diffusivity_pass = dmir_mean_diffusivity[
         dmir_mean_diffusivity.index.isin(subs_pass.index)
-    ].dropna()
-
-    print(
-        "Sample size with complete MD data after QC, number =",
-        dmir_mean_diffusivity_pass.shape[0],
-    )
+    ]
 
     # Rename the FA and DM features to have "lh" or "rh" suffixes
 
@@ -384,9 +375,50 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         columns=dti_features_mapping,
         inplace=True,
     )
+
+    # Drop these columns because they are duplicates with a slightly different regional focus
+    FA_cols_to_drop = [
+        "FA_dti_atlas_tract_fornix_excluding_fimbrialh",
+        "FA_dti_atlas_tract_fornix_excluding_fimbriarh",
+        "FA_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlylh",
+        "FA_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlyrh",
+        "FA_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlylh",
+        "FA_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
+    ]
+
+    dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.drop(
+        columns=FA_cols_to_drop
+    )
+
+    dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.dropna()
+
+    print(
+        "Sample size with complete FA data after QC, number =",
+        dmir_fractional_anisotropy_pass.shape[0],
+    )
     dmir_mean_diffusivity_pass.rename(
         columns=dti_features_mapping,
         inplace=True,
+    )
+
+    MD_cols_to_drop = [
+        "MD_dti_atlas_tract_fornix_excluding_fimbrialh",
+        "MD_dti_atlas_tract_fornix_excluding_fimbriarh",
+        "MD_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlylh",
+        "MD_dti_atlas_tract_superior_corticostriate_frontal_cortex_onlyrh",
+        "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlylh",
+        "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
+    ]
+
+    dmir_mean_diffusivity_pass = dmir_mean_diffusivity_pass.drop(
+        columns=MD_cols_to_drop
+    )
+
+    dmir_mean_diffusivity_pass = dmir_mean_diffusivity_pass.dropna()
+
+    print(
+        "Sample size with complete MD data after QC, number =",
+        dmir_mean_diffusivity_pass.shape[0],
     )
 
     # Combine all the modalities
@@ -480,7 +512,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # 6 principle components were added here to control for genetic ancestry
 
-    pca_path = Path("data", "poppy", "abcd_pca_from_randomforest.tsv")
+    pca_path = Path(
+        "data",
+        "poppy",
+        "abcd_pca_from_randomforest.tsv",
+    )
 
     pca_data = pd.read_csv(pca_path, sep="\t", index_col=0)
 
@@ -507,6 +543,12 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         how="left",
     ).dropna()
 
+    # Drop the subjects with 999 household income (missing values or don't know)
+
+    # mri_all_features_cov = mri_all_features_cov[
+    #     mri_all_features_cov.demo_comb_income_v2 != 999
+    # ]
+
     print(
         "Sample size with all imaging features and covariates, number = ",
         mri_all_features_cov.shape[0],
@@ -517,7 +559,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     PRS_path = Path(
         "data",
         "poppy",
-        "abcd_plink1-aoDEP-EUR.profiles",
+        "adoldep_noABCD_sbayesrc.profile",
     )
 
     # Read the PRS file as space-delimited

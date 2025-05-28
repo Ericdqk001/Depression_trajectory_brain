@@ -5,17 +5,17 @@ from src.poppy.scripts.rep_measure_analysis import perform_repeated_measures_ana
 from src.poppy.scripts.visualise import visualise_effect_size
 
 
-def main(wave: str = "baseline_year_1_arm_1"):
+def main(wave: str = "baseline_year_1_arm_1", experiment_number: int = 1):
     # Call the preprocess function from the prepare_img module
     preprocess(wave=wave)
     # Call the rep_measure_analysis function from the rep_measure_analysis module
-    perform_repeated_measures_analysis(wave=wave)
+    perform_repeated_measures_analysis(wave=wave, experiment_number=experiment_number)
     # Call the identify_sig_inter_terms function from the identify_sig_inter_terms module
-    identify_sig_inter_terms(wave=wave)
+    identify_sig_inter_terms(wave=wave, experiment_number=experiment_number)
     # Call the glm_analysis function from the glm module
-    perform_glm(wave=wave)
+    perform_glm(wave=wave, experiment_number=experiment_number)
     # Call the visualise_effect_size function from the visualise module
-    visualise_effect_size(wave=wave)
+    visualise_effect_size(wave=wave, experiment_number=experiment_number)
 
 
 if __name__ == "__main__":

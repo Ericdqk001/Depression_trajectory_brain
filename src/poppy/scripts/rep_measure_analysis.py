@@ -14,7 +14,10 @@ logging.basicConfig(
 )
 
 
-def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
+def perform_repeated_measures_analysis(
+    wave: str = "baseline_year_1_arm_1",
+    experiment_number: int = 1,
+):
     # Define the brain modalities
     modalities = [
         "bilateral_cortical_thickness",
@@ -149,7 +152,8 @@ def perform_repeated_measures_analysis(wave: str = "baseline_year_1_arm_1"):
     results_path = Path(
         "src",
         "poppy",
-        "analysis_results",
+        "experiments",
+        f"exp_{experiment_number}",
     )
 
     results_path.mkdir(parents=True, exist_ok=True)

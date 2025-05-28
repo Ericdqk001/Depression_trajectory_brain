@@ -5,7 +5,10 @@ import pandas as pd
 import statsmodels.formula.api as smf
 
 
-def perform_glm(wave: str = "baseline_year_1_arm_1"):
+def perform_glm(
+    wave: str = "baseline_year_1_arm_1",
+    experiment_number: int = 1,
+):
     data_path = Path(
         "data",
         "poppy",
@@ -21,7 +24,8 @@ def perform_glm(wave: str = "baseline_year_1_arm_1"):
     results_path = Path(
         "src",
         "poppy",
-        "analysis_results",
+        "experiments",
+        f"exp_{experiment_number}",
     )
 
     # === Load data ===

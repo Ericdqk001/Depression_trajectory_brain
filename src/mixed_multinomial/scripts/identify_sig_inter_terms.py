@@ -6,8 +6,7 @@ from statsmodels.stats.multitest import multipletests
 
 
 def identify_sig_inter_terms(
-    wave: str = "baseline_year_1_arm_1",
-    experiment_number: int = 1,
+    wave: str = "baseline_year_1_arm_1", results_number: int = 1
 ):
     modalities = [
         "bilateral_cortical_thickness",
@@ -18,34 +17,40 @@ def identify_sig_inter_terms(
         "bilateral_tract_MD",
     ]
 
-    interaction_term = "hemisphere[T.Right]:aoDEP_SBayesR"
-
     results_path = Path(
         "src",
-        "poppy",
+        "img_analysis",
         "experiments",
-        f"exp_{experiment_number}",
+        f"exp_{results_number}",
     )
 
     # Load results
     repeated_results = pd.read_csv(
         Path(
             results_path,
-            f"repeated_bilateral_prs_results-{wave}.csv",
+            f"repeated_bilateral_traj_results-{wave}.csv",
         )
     )
 
     significant_features_by_modality = {}
 
+    # The interaction terms of interest (as in rep_measure_analysis.py)
+    interaction_terms = [
+        "hemisphereRight:class_label1",
+        "hemisphereRight:class_label2",
+        "hemisphereRight:class_label3",
+    ]
+
     for modality in modalities:
         modality_df = repeated_results[
             (repeated_results["modality"] == modality)
-            & (repeated_results["predictor"] == interaction_term)
+            & (repeated_results["effect_name"].isin(interaction_terms))
         ]
 
         if not modality_df.empty:
             # Apply FDR correction
-            pvals = modality_df["p_value"].values
+            pvals = modality_df["P-val"].values
+
             rejected, qvals, _, _ = multipletests(pvals, alpha=0.05, method="fdr_bh")
 
             modality_df = modality_df.copy()
@@ -70,3 +75,7 @@ def identify_sig_inter_terms(
         "w",
     ) as f:
         json.dump(significant_features_by_modality, f, indent=4)
+
+
+if __name__ == "__main__":
+    identify_sig_inter_terms()
