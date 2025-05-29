@@ -12,8 +12,10 @@ def visualise_effect_size(
     wave: str = "baseline_year_1_arm_1",
     experiment_number: int = 1,
 ):
-    # File paths
+    # Predictor name
+    predictor = "SCORESUM"
 
+    # File paths
     results_path = Path(
         "src",
         "poppy",
@@ -48,7 +50,7 @@ def visualise_effect_size(
 
     # Filter out the interaction terms from bilateral_df
 
-    interaction_term = "hemisphere[T.Right]:SCORESUM"
+    interaction_term = f"hemisphere[T.Right]:{predictor}"
 
     bilateral_df = bilateral_df[bilateral_df["predictor"] != interaction_term].copy()
 
@@ -76,10 +78,15 @@ def visualise_effect_size(
         )
 
     # Filter to PRS main effect only
-    combined_df = combined_df[combined_df["predictor"] == "aoDEP_SBayesR"].copy()
+    combined_df = combined_df[combined_df["predictor"] == predictor].copy()
 
     # Clean and validate numeric columns
-    key_cols = ["coefficient", "CI_lower", "CI_upper", "p_value"]
+    key_cols = [
+        "coefficient",
+        "CI_lower",
+        "CI_upper",
+        "p_value",
+    ]
 
     try:
         for col in key_cols:
@@ -163,6 +170,12 @@ def visualise_effect_size(
             .values
         )
 
+    # Save the combined DataFrame
+    combined_df.to_csv(
+        results_path / f"combined_fdr_corrected_prs_results-{wave}.csv",
+        index=False,
+    )
+
     # Sort by modality group
     modality_order = list(modality_palette.keys())
     ordered_df = pd.concat(
@@ -245,6 +258,6 @@ def visualise_effect_size(
         "images",
     )
     output_dir.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_dir / f"aoDEP_SBayesR_plot-{wave}.png", dpi=300)
+    plt.savefig(output_dir / f"PRS_plot-{wave}.png", dpi=300)
 
     plt.show()
