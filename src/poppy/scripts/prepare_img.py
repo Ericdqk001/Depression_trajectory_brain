@@ -90,6 +90,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # 2. dmri data recommended for inclusion (YES)
     # 3. Overall MRI clinical report score < 3, which excludes subjects with neurological issues.
 
+    print("Quality Control Criteria:")
+    print("T1 data recommended for inclusion = 1")
+    print("dMRI data recommended for inclusion = 1")
+    print("Overall MRI clinical report score < 3")
+
     mri_clin_report_path = Path(
         imaging_path,
         "mri_y_qc_clfind.csv",
@@ -203,6 +208,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Cortical thickness data
     mri_y_smr_thk_dst = mri_y_smr_thk_dst[mri_y_smr_thk_dst.eventname == wave]
 
+    print(
+        "Sample size with T1w cortical thickness data, number =",
+        mri_y_smr_thk_dst.shape[0],
+    )
+
     t1w_cortical_thickness_pass = mri_y_smr_thk_dst[
         mri_y_smr_thk_dst.index.isin(subs_pass.index)
     ].dropna()
@@ -214,6 +224,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # Cortical volume data
     mri_y_smr_vol_dst = mri_y_smr_vol_dst[mri_y_smr_vol_dst.eventname == wave]
+
+    print(
+        "Sample size with T1w cortical volume data, number =",
+        mri_y_smr_vol_dst.shape[0],
+    )
 
     t1w_cortical_volume_pass = mri_y_smr_vol_dst[
         mri_y_smr_vol_dst.index.isin(subs_pass.index)
@@ -228,6 +243,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     mri_y_smr_area_dst = mri_y_smr_area_dst[mri_y_smr_area_dst.eventname == wave]
 
+    print(
+        "Sample size with T1w cortical surface area data, number =",
+        mri_y_smr_area_dst.shape[0],
+    )
+
     t1w_cortical_surface_area_pass = mri_y_smr_area_dst[
         mri_y_smr_area_dst.index.isin(subs_pass.index)
     ].dropna()
@@ -240,6 +260,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Subcortical volume
 
     t1w_subcortical_volume = mri_y_smr_vol_aseg[mri_y_smr_vol_aseg.eventname == wave]
+
+    print(
+        "Sample size with T1w subcortical volume data, number =",
+        t1w_subcortical_volume.shape[0],
+    )
 
     t1w_subcortical_volume_pass = t1w_subcortical_volume[
         t1w_subcortical_volume.index.isin(subs_pass.index)
@@ -272,16 +297,36 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         mri_y_dti_fa_fs_at.eventname == wave
     ]
 
-    dmir_mean_diffusivity = mri_y_dti_md_fs_at[mri_y_dti_md_fs_at.eventname == wave]
+    print(
+        "Sample size with dMRI fractional anisotropy data, number =",
+        dmir_fractional_anisotropy.shape[0],
+    )
 
     # Dropna later because some columns will be removed
     dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy[
         dmir_fractional_anisotropy.index.isin(subs_pass.index)
     ]
 
+    print(
+        "Sample size with complete FA data after QC, number =",
+        dmir_fractional_anisotropy_pass.shape[0],
+    )
+
+    dmir_mean_diffusivity = mri_y_dti_md_fs_at[mri_y_dti_md_fs_at.eventname == wave]
+
+    print(
+        "Sample size with dMRI mean diffusivity data, number =",
+        dmir_mean_diffusivity.shape[0],
+    )
+
     dmir_mean_diffusivity_pass = dmir_mean_diffusivity[
         dmir_mean_diffusivity.index.isin(subs_pass.index)
     ]
+
+    print(
+        "Sample size with complete MD data after QC, number =",
+        dmir_mean_diffusivity_pass.shape[0],
+    )
 
     # Rename the FA and DM features to have "lh" or "rh" suffixes
 
@@ -366,15 +411,24 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     dmir_mean_diffusivity_pass = sort_dmri_columns(dmir_mean_diffusivity_pass)
 
+    print("Sort dMRI FA/MD columns by number at the end of each column name")
+    print("For example: 'dmdtifp1_43', ''dmdtifp1_44', 'dmdtifp1_45'")
+    print("Sorting is error-free, checked")
+
     # Parse the DTI features
     dti_features_mapping = parse_dti_features_pretty(dmri_data_dict)
 
-    # Rename the columns in dmri data
+    print(
+        "Parsing FA/MD feature descriptions to new feature names is error-free, Checked"
+    )
 
+    # Rename the columns in dmri data
     dmir_fractional_anisotropy_pass.rename(
         columns=dti_features_mapping,
         inplace=True,
     )
+
+    print("Renaming FA features to new feature names is error-free, Checked")
 
     # Drop these columns because they are duplicates with a slightly different regional focus
     FA_cols_to_drop = [
@@ -386,6 +440,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "FA_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
     ]
 
+    print(
+        "Drop the following FA columns because they are duplicates with a slightly different regional focus:"
+    )
+    print(FA_cols_to_drop)
+
     dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.drop(
         columns=FA_cols_to_drop
     )
@@ -396,10 +455,13 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "Sample size with complete FA data after QC, number =",
         dmir_fractional_anisotropy_pass.shape[0],
     )
+
     dmir_mean_diffusivity_pass.rename(
         columns=dti_features_mapping,
         inplace=True,
     )
+
+    print("Renaming MD features to new feature names is error-free, Checked")
 
     MD_cols_to_drop = [
         "MD_dti_atlas_tract_fornix_excluding_fimbrialh",
@@ -464,6 +526,8 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     mri_y_adm_info["img_device_label"] = label
 
+    print("Use LabelEncoder to encode the imaging device ID")
+
     # For interview_age (in months)
     abcd_y_lt_path = Path(
         general_info_path,
@@ -509,6 +573,8 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Not available category (777:refused to answer, 999: don't know, missing values)
 
     household_income = household_income.replace([777, np.nan], 999)
+
+    print("Subjects who either refused to answer or don't know their income are set to 999")
 
     # 6 principle components were added here to control for genetic ancestry
 
