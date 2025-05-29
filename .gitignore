@@ -174,3 +174,5 @@ src/poppy/analysis_results/
 src/img_analysis/analysis_results
 
 src/img_analysis/experiments/
+
+src/poppy/experiments/

@@ -56,7 +56,7 @@ def perform_repeated_measures_analysis(
     features_df["img_device_label"] = features_df["img_device_label"].astype("category")
 
     # PRS variable of interest
-    prs_variable = "aoDEP_SBayesR"
+    prs_variable = "SCORESUM"
 
     # Store results here
     results_list = []

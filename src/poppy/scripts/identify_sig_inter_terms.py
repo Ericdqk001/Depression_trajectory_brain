@@ -9,6 +9,8 @@ def identify_sig_inter_terms(
     wave: str = "baseline_year_1_arm_1",
     experiment_number: int = 1,
 ):
+    prs_variable = "SCORESUM"
+
     modalities = [
         "bilateral_cortical_thickness",
         "bilateral_cortical_volume",
@@ -18,7 +20,7 @@ def identify_sig_inter_terms(
         "bilateral_tract_MD",
     ]
 
-    interaction_term = "hemisphere[T.Right]:aoDEP_SBayesR"
+    interaction_term = f"hemisphere[T.Right]:{prs_variable}"
 
     results_path = Path(
         "src",

@@ -40,7 +40,7 @@ def perform_glm(
     df["demo_sex_v2"] = df["demo_sex_v2"].astype("category")
     df["img_device_label"] = df["img_device_label"].astype("category")
 
-    prs_variable = "aoDEP_SBayesR"
+    prs_variable = "SCORESUM"
 
     modalities = [
         "unilateral_subcortical_features",

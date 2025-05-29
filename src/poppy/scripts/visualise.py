@@ -1,3 +1,4 @@
+import json
 import sys
 import warnings
 from pathlib import Path
@@ -7,30 +8,62 @@ import pandas as pd
 from statsmodels.stats.multitest import fdrcorrection
 
 
-def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
+def visualise_effect_size(
+    wave: str = "baseline_year_1_arm_1",
+    experiment_number: int = 1,
+):
     # File paths
-    repeated_bilateral_prs_results_path = Path(
+
+    results_path = Path(
         "src",
         "poppy",
-        "analysis_results",
+        "experiments",
+        f"exp_{experiment_number}",
+    )
+
+    repeated_bilateral_prs_results_path = Path(
+        results_path,
         f"repeated_bilateral_prs_results-{wave}.csv",
     )
     unilateral_features_glm_results_path = Path(
-        "src",
-        "poppy",
-        "analysis_results",
+        results_path,
         f"unilateral_features_glm_results-{wave}.csv",
     )
     sig_hemi_features_glm_results_path = Path(
-        "src",
-        "poppy",
-        "analysis_results",
+        results_path,
         f"sig_hemi_features_glm_results-{wave}.csv",
     )
 
+    sig_interaction_terms_path = Path(
+        results_path,
+        f"sig_interaction_terms-{wave}.json",
+    )
+
     # Read in results
-    bilateral_df = pd.read_csv(repeated_bilateral_prs_results_path)
+    bilateral_df = pd.read_csv(str(repeated_bilateral_prs_results_path))
     unilateral_df = pd.read_csv(unilateral_features_glm_results_path)
+
+    with open(sig_interaction_terms_path, "r") as f:
+        sig_interaction_terms = json.load(f)
+
+    # Filter out the interaction terms from bilateral_df
+
+    interaction_term = "hemisphere[T.Right]:SCORESUM"
+
+    bilateral_df = bilateral_df[bilateral_df["predictor"] != interaction_term].copy()
+
+    # Take about the bilateral features which had significant interaction terms
+
+    to_remove = set()
+    for modality, features in sig_interaction_terms.items():
+        for feature in features:
+            to_remove.add((modality, feature))
+
+    # Filter out rows where (modality, feature) is in to_remove
+    mask = bilateral_df.apply(
+        lambda row: (row["modality"], row["feature"]) not in to_remove, axis=1
+    )
+    bilateral_df = bilateral_df[mask].reset_index(drop=True).copy()
 
     # Optional: Load sig_hemi_df if not empty
     sig_hemi_df = pd.read_csv(sig_hemi_features_glm_results_path)
@@ -58,9 +91,7 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
 
     except Exception as e:
         warnings.warn(f"Data validation failed: {e}")
-        sys.exit(
-            "❌ Visualisation aborted due to data issues. Please check your input."
-        )
+        sys.exit("Visualisation aborted due to data issues. Please check your input.")
 
     # Collapse modality labels
     modality_map = {
@@ -83,7 +114,7 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
             combined_df["modality"].isnull(), "modality"
         ].unique()
         warnings.warn(f"Unrecognized modality values found: {unknown_modalities}")
-        sys.exit("❌ Visualisation aborted due to unknown modalities.")
+        sys.exit("Visualisation aborted due to unknown modalities.")
 
     # Assign colors
     modality_palette = {
@@ -206,7 +237,13 @@ def visualise_effect_size(wave: str = "baseline_year_1_arm_1"):
     plt.tight_layout()
 
     # Save
-    output_dir = Path("src", "poppy", "images")
+    output_dir = Path(
+        "src",
+        "poppy",
+        "experiments",
+        f"exp_{experiment_number}",
+        "images",
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_dir / f"aoDEP_SBayesR_plot-{wave}.png", dpi=300)
 
