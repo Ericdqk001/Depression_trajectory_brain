@@ -109,7 +109,7 @@ def perform_repeated_measures_analysis(
             if feature not in features_df.columns:
                 print(f"Feature {feature} not found in columns for {wave}")
                 continue
-            print(f"🧠 Fitting model for feature: {feature}")
+            print(f"Fitting model for feature: {feature}")
             formula = f"{feature} ~ hemisphere * class_label + {' + '.join(fixed_effects)} + (1|src_subject_id) + (1|site_id_l:rel_family_id)"
             try:
                 model = Lmer(formula, data=features_df)

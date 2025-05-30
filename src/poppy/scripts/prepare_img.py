@@ -826,29 +826,6 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     print("Creating long-form data is error-free, Checked")
 
-    # # Test: Check if other_columns values are the same for both hemispheres,
-    # # and imaging features differ between hemispheres for one subject
-
-    # # Pick one subject
-    # subject_id = long_data.index[0]
-
-    # # Get left and right rows for this subject
-    # left_row = long_data[(long_data.index == subject_id) & (long_data["hemisphere"] == "Left")]
-    # right_row = long_data[(long_data.index == subject_id) & (long_data["hemisphere"] == "Right")]
-
-    # # Pick one feature from other_columns and one from imaging columns
-    # example_other = other_columns[1]
-    # example_img = [col for col in long_data.columns if col.startswith("img_")][9]
-
-    # print("Subject ID:", subject_id)
-    # print("Other column value (Left):", left_row[example_other].values[0])
-    # print("Other column value (Right):", right_row[example_other].values[0])
-    # print("Are other column values equal?", left_row[example_other].values[0] == right_row[example_other].values[0])
-
-    # print("Imaging feature value (Left):", left_row[example_img].values[0])
-    # print("Imaging feature value (Right):", right_row[example_img].values[0])
-    # print("Are imaging feature values equal?", left_row[example_img].values[0] == right_row[example_img].values[0])
-
     # %%
 
     # Save (index already captured in column)

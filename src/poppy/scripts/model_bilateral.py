@@ -1,11 +1,9 @@
 import json
 import logging
-import warnings
 from pathlib import Path
 
 import pandas as pd
-import statsmodels.formula.api as smf
-from statsmodels.tools.sm_exceptions import ConvergenceWarning
+from pymer4.models import Lmer
 
 logging.basicConfig(
     filename="model_fitting.log",
@@ -54,11 +52,6 @@ def perform_repeated_measures_analysis(
     # Set categorical variables
     features_df["demo_sex_v2"] = features_df["demo_sex_v2"].astype("category")
     features_df["img_device_label"] = features_df["img_device_label"].astype("category")
-    features_df["hemisphere"] = features_df["hemisphere"].astype("category")
-    features_df["src_subject_id"] = features_df["src_subject_id"].astype("category")
-    features_df["demo_comb_income_v2"] = features_df["demo_comb_income_v2"].astype(
-        "category"
-    )
 
     # PRS variable of interest
 
@@ -70,7 +63,7 @@ def perform_repeated_measures_analysis(
     results_list = []
 
     # Loop over each modality
-    for modality in modalities[0]:
+    for modality in modalities:
         print(f"Processing {modality}")
         roi_list = feature_sets[modality]
 
@@ -78,15 +71,15 @@ def perform_repeated_measures_analysis(
         fixed_effects = [
             "interview_age",
             "age2",
-            "C(demo_sex_v2)",
-            "C(img_device_label)",
+            "demo_sex_v2",
+            "img_device_label",
             "pc1",
             "pc2",
             "pc3",
             "pc4",
             "pc5",
             "pc6",
-            "C(demo_comb_income_v2)",
+            "demo_comb_income_v2",
         ]
 
         if modality == "bilateral_cortical_thickness":
@@ -111,33 +104,34 @@ def perform_repeated_measures_analysis(
             print(f"Fitting model for: {feature}")
 
             # Mixed-effects model formula with PRS x hemisphere interaction
-            formula = f"{feature} ~ C(hemisphere) * {prs_variable} + {' + '.join(fixed_effects)}"
+            formula = f"{feature} ~ hemisphere * {prs_variable} + {' + '.join(fixed_effects)} + (1|src_subject_id)"
 
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always", ConvergenceWarning)
+            try:
+                model = Lmer(formula, data=features_df)
+                model.fit(summarize=False)
 
-                try:
-                    model = smf.mixedlm(
-                        formula=formula,
-                        data=features_df,
-                        groups=features_df["src_subject_id"],
-                    ).fit()
+            except Exception as e:
+                print(f"Model failed for {feature} in {modality} for {wave}: {e}")
+                logging.error(
+                    f"Model failed for {feature} in {modality} for {wave}: {e}"
+                )
+                continue
 
-                    # Log any convergence warnings
-                    for warning in w:
-                        if issubclass(warning.category, ConvergenceWarning):
-                            logging.warning(
-                                f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
-                            )
+            # Save both main trajectory class effect and hemisphere interaction
+            coefs = model.coefs
 
-                except Exception as e:
-                    logging.error(
-                        f"Model failed for {feature} in {modality} for {wave}: {e}"
-                    )
-                    continue
+            # print(coefs)
+            # Filter by index (effect names)
+            coefs = coefs.loc[coefs.index.isin(effects_of_interest)].copy()
+            coefs = coefs.reset_index().rename(columns={"index": "effect_name"})
+            coefs["modality"] = modality
+            coefs["feature"] = feature
+
+            results_list.append(coefs)
+            # print(results_list)
 
             # Save both main PRS effect and hemisphere interaction
-            for effect in [prs_variable, f"C(hemisphere)[T.Right]:{prs_variable}"]:
+            for effect in [prs_variable, f"hemisphere[T.Right]:{prs_variable}"]:
                 if effect in model.params.index:
                     coef = model.params[effect]
                     pval = model.pvalues[effect]
