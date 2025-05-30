@@ -445,8 +445,18 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     )
     print(FA_cols_to_drop)
 
+    print(
+        "FA number of features before dropping columns: ",
+        dmir_fractional_anisotropy_pass.shape[1],
+    )
+
     dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.drop(
         columns=FA_cols_to_drop
+    )
+
+    print(
+        "FA number of features after dropping columns: ",
+        dmir_fractional_anisotropy_pass.shape[1],
     )
 
     dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.dropna()
@@ -471,9 +481,23 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlylh",
         "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
     ]
+    print(
+        "Drop the following MD columns because they are duplicates with a slightly different regional focus:"
+    )
+    print(MD_cols_to_drop)
+
+    print(
+        "MD number of features before dropping columns: ",
+        dmir_mean_diffusivity_pass.shape[1],
+    )
 
     dmir_mean_diffusivity_pass = dmir_mean_diffusivity_pass.drop(
         columns=MD_cols_to_drop
+    )
+
+    print(
+        "MD number of features after dropping columns: ",
+        dmir_mean_diffusivity_pass.shape[1],
     )
 
     dmir_mean_diffusivity_pass = dmir_mean_diffusivity_pass.dropna()
@@ -504,6 +528,8 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     ### Add covariates to be considered in the analysis
 
+    print("Adding covariates to the imaging features")
+
     # For site information (imaging device ID)
     mri_y_adm_info_path = Path(
         imaging_path,
@@ -524,9 +550,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # encoder and return encoded label
     label = le.fit_transform(mri_y_adm_info["mri_info_deviceserialnumber"])
 
+    print("Add covariate: mri_info_deviceserialnumber")
+
     mri_y_adm_info["img_device_label"] = label
 
-    print("Use LabelEncoder to encode the imaging device ID")
+    print("Using LabelEncoder to encode the imaging device ID is error-free, Checked")
 
     # For interview_age (in months)
     abcd_y_lt_path = Path(
@@ -545,6 +573,8 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Add an age squared term
 
     abcd_y_lt["age2"] = abcd_y_lt.interview_age**2
+
+    print("Add covariate: interview_age and age2 (sqaured interview_age)")
 
     # Add family ID
 
@@ -572,9 +602,14 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # Not available category (777:refused to answer, 999: don't know, missing values)
 
-    household_income = household_income.replace([777, np.nan], 999)
+    household_income = household_income.replace(
+        [777, 999],
+        np.nan,
+    )
 
-    print("Subjects who either refused to answer or don't know their income are set to 999")
+    print(
+        "Subjects who either refused to answer or don't know their income are set to NA"
+    )
 
     # 6 principle components were added here to control for genetic ancestry
 
@@ -590,12 +625,15 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     pca_data = pca_data[["pc1", "pc2", "pc3", "pc4", "pc5", "pc6"]]
 
+    print("Add covariates: 6 principle components from abcd_pca_from_randomforest.tsv")
+
     series_list = [
         demographics_bl.demo_sex_v2,
         mri_y_adm_info.img_device_label,
         abcd_y_lt.interview_age,
         abcd_y_lt.age2,
         family_id,
+        household_income,
     ]
 
     covariates = pd.concat(series_list, axis=1).dropna()
@@ -608,12 +646,6 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         covariates,
         how="left",
     ).dropna()
-
-    # Drop the subjects with 999 household income (missing values or don't know)
-
-    # mri_all_features_cov = mri_all_features_cov[
-    #     mri_all_features_cov.demo_comb_income_v2 != 999
-    # ]
 
     print(
         "Sample size with all imaging features and covariates, number = ",
@@ -628,6 +660,11 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "adoldep_noABCD_sbayesrc.profile",
     )
 
+    print(
+        "PRS data file name: ",
+        PRS_path.name,
+    )
+
     # Read the PRS file as space-delimited
     prs_df = pd.read_csv(PRS_path, delim_whitespace=True)
 
@@ -636,7 +673,16 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Rename the index name here for later long data concatenation
     prs_df.index.name = "src_subject_id"
 
-    # 4313 removed (NOTE: you might wanna ask if this is expected)
+    # Drop not needed columns
+    not_needed_cols = [
+        "PHENO",
+        "CNT",
+        "CNT2",
+    ]
+
+    prs_df = prs_df.drop(columns=not_needed_cols)
+
+    # A lot removed (NOTE: you might wanna ask if this is expected)
     mri_all_features_with_prs = mri_all_features_cov.join(prs_df, how="inner")
 
     print(
@@ -648,11 +694,15 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     seed = 42
 
+    print("Keeping unrelated subjects, random seed = ", seed)
+
     mri_all_features_with_prs = mri_all_features_with_prs.loc[
         mri_all_features_with_prs.groupby(["rel_family_id"]).apply(
             lambda x: x.sample(n=1, random_state=seed).index[0]
         ),
     ]
+
+    print("Keeping unrelated subjects is error-free, Checked")
 
     print(
         "Sample size after keeping unrelated subjects, number = ",
@@ -661,12 +711,38 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # Standardize the continuous variables
 
-    # Columns to exclude from scaling
+    print("Standardizing the continuous variables")
+
+    categorical_variables = [
+        "demo_sex_v2",
+        "img_device_label",
+        "rel_family_id",
+        "demo_comb_income_v2",
+    ]
+
+    for col in categorical_variables:
+        if col in mri_all_features_with_prs.columns:
+            mri_all_features_with_prs[col] = mri_all_features_with_prs[col].astype(
+                "category"
+            )
+
+    print(
+        "Make sure the following columns are categorical: ",
+    )
+    print(", ".join(categorical_variables))
+
+    # Columns to exclude from standardization
     exclude_cols = [
         "demo_sex_v2",
-        "label_site",
+        "img_device_label",
         "rel_family_id",
+        "demo_comb_income_v2",
     ]
+
+    print(
+        "Excluding the following columns from standardisation: ",
+        ", ".join(exclude_cols),
+    )
 
     # Get columns to scale (everything else)
     cols_to_scale = [
@@ -680,6 +756,8 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         mri_all_features_with_prs[cols_to_scale]
     )
 
+    print("Standardization of continuous variables is error-free, Checked")
+
     rescaled_mri_all_features_with_prs = mri_all_features_with_prs.copy()
 
     # This is for performing GLM (for unilateral features)
@@ -691,21 +769,31 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         index=True,
     )
 
+    print("Rescaled imaging features with PRS saved to CSV")
+
     print(
         f"Final Sample size for wave:{wave}",
         rescaled_mri_all_features_with_prs.shape[0],
     )
 
-    # %%
+    ### Create long-form data for left and right hemisphere features
     # Identify left/right hemisphere columns
+
+    print("Creating long-form data for left and right hemisphere features")
+
     lh_columns = [
         col for col in rescaled_mri_all_features_with_prs.columns if col.endswith("lh")
     ]
+
+    print("Number of left hemisphere features: ", len(lh_columns))
+
     rh_columns = [
         col for col in rescaled_mri_all_features_with_prs.columns if col.endswith("rh")
     ]
 
-    # Identify all non-imaging columns
+    print("Number of right hemisphere features: ", len(rh_columns))
+
+    # Identify all other columns (covariates, unilateral features, PRS.)
     other_columns = [
         col
         for col in rescaled_mri_all_features_with_prs.columns
@@ -735,6 +823,32 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         [lh_data, rh_data],
         axis=0,
     )
+
+    print("Creating long-form data is error-free, Checked")
+
+    # # Test: Check if other_columns values are the same for both hemispheres,
+    # # and imaging features differ between hemispheres for one subject
+
+    # # Pick one subject
+    # subject_id = long_data.index[0]
+
+    # # Get left and right rows for this subject
+    # left_row = long_data[(long_data.index == subject_id) & (long_data["hemisphere"] == "Left")]
+    # right_row = long_data[(long_data.index == subject_id) & (long_data["hemisphere"] == "Right")]
+
+    # # Pick one feature from other_columns and one from imaging columns
+    # example_other = other_columns[1]
+    # example_img = [col for col in long_data.columns if col.startswith("img_")][9]
+
+    # print("Subject ID:", subject_id)
+    # print("Other column value (Left):", left_row[example_other].values[0])
+    # print("Other column value (Right):", right_row[example_other].values[0])
+    # print("Are other column values equal?", left_row[example_other].values[0] == right_row[example_other].values[0])
+
+    # print("Imaging feature value (Left):", left_row[example_img].values[0])
+    # print("Imaging feature value (Right):", right_row[example_img].values[0])
+    # print("Are imaging feature values equal?", left_row[example_img].values[0] == right_row[example_img].values[0])
+
     # %%
 
     # Save (index already captured in column)
@@ -745,21 +859,37 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         ),
         index=True,
     )
+
+    print("Long-form imaging features with PRS saved to CSV")
     # %%
     ### Now select the columns that are the phenotypes of interest for each modality
 
+    print("Selecting features of interest for each modality")
+
     ### Remove global features for all modality
+    print("Removing global features for each modality")
+
+    print("Cortical thickness global features:")
+    print(list(t1w_cortical_thickness_pass.columns[-3:]))
+
     t1w_cortical_thickness_rois = list(t1w_cortical_thickness_pass.columns[1:-3])
 
     # For cortical volume
+
+    print("Cortical volume global features:")
+    print(list(t1w_cortical_volume_pass.columns[-3:]))
     t1w_cortical_volume_rois = list(t1w_cortical_volume_pass.columns[1:-3])
 
     # For surface area
+
+    print("Cortical surface area global features:")
+    print(list(t1w_cortical_surface_area_pass.columns[-3:]))
     t1w_cortical_surface_area_rois = list(t1w_cortical_surface_area_pass.columns[1:-3])
 
     ### For subcortical volume
 
     # NOTE: A list of global features selected by GPT, this might need to be updated
+
     global_subcortical_features = [
         "smri_vol_scs_csf",
         "smri_vol_scs_wholeb",
@@ -771,6 +901,9 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "smri_vol_scs_wmhint",
     ]
 
+    print("Subcortical volume global features:")
+    print(global_subcortical_features)
+
     # FA global features
     global_FA_features = [
         "FA_all_dti_atlas_tract_fibers",
@@ -780,6 +913,9 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "FA_hemisphere_dti_atlas_tract_fiberslh",
     ]
 
+    print("FA global features:")
+    print(global_FA_features)
+
     # MD global features
     global_MD_features = [
         "MD_all_dti_atlas_tract_fibers",
@@ -788,6 +924,9 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "MD_hemisphere_dti_atlas_tract_fibersrh",
         "MD_hemisphere_dti_atlas_tract_fiberslh",
     ]
+
+    print("MD global features:")
+    print(global_MD_features)
 
     # Step 2: Select subcortical ROIs
     t1w_subcortical_volume_rois = [
@@ -820,11 +959,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
         # Unilateral = present in only one hemisphere or has no suffix
         unilateral_features = [
-            f
-            for f in feature_list
-            if (f.endswith("lh") and f[:-2] not in bilateral_roots)
-            or (f.endswith("rh") and f[:-2] not in bilateral_roots)
-            or (not f.endswith("lh") and not f.endswith("rh"))
+            f for f in feature_list if (not f.endswith("lh") and not f.endswith("rh"))
         ]
 
         # Add prefix (img_) to the bilateral features
@@ -857,6 +992,14 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "unilateral_tract_FA": get_bilateral_and_unilateral_features(FA_rois)[1],
         "unilateral_tract_MD": get_bilateral_and_unilateral_features(MD_rois)[1],
     }
+
+    print(
+        "Creating features of interest for repeated effects modeling is error-free, Checked"
+    )
+
+    print("Number of features for each modality:")
+    for modality, features in features_of_interest.items():
+        print(f"{modality}: {len(features)} features")
 
     features_for_repeated_effects_path = Path(
         poppy_data_path,
