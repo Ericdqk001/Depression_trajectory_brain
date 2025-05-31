@@ -5,12 +5,12 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from statsmodels.stats.multitest import fdrcorrection
+from statsmodels.stats.multitest import multipletests
 
 
 def visualise_effect_size(
     wave: str = "baseline_year_1_arm_1",
-    experiment_number: int = 1,
+    experiment_number: int = 3,
 ):
     # Predictor name
     predictor = "SCORESUM"
@@ -42,43 +42,49 @@ def visualise_effect_size(
     )
 
     # Read in results
-    bilateral_df = pd.read_csv(str(repeated_bilateral_prs_results_path))
+    bilateral_df = pd.read_csv(repeated_bilateral_prs_results_path)
     unilateral_df = pd.read_csv(unilateral_features_glm_results_path)
 
     with open(sig_interaction_terms_path, "r") as f:
         sig_interaction_terms = json.load(f)
 
     # Filter out the interaction terms from bilateral_df
-
-    interaction_term = f"hemisphere[T.Right]:{predictor}"
+    interaction_term = f"C(hemisphere)[T.Right]:{predictor}"
 
     bilateral_df = bilateral_df[bilateral_df["predictor"] != interaction_term].copy()
 
-    # Take about the bilateral features which had significant interaction terms
-
+    # Take out the bilateral features which had significant interaction terms
     to_remove = set()
     for modality, features in sig_interaction_terms.items():
         for feature in features:
+            print(
+                f"Removing {modality} - {feature} due to significant interaction term."
+            )
             to_remove.add((modality, feature))
 
     # Filter out rows where (modality, feature) is in to_remove
     mask = bilateral_df.apply(
         lambda row: (row["modality"], row["feature"]) not in to_remove, axis=1
     )
+
     bilateral_df = bilateral_df[mask].reset_index(drop=True).copy()
+
+    print("Removing features is error-free, checked.")
 
     # Optional: Load sig_hemi_df if not empty
     sig_hemi_df = pd.read_csv(sig_hemi_features_glm_results_path)
+
     if sig_hemi_df.empty:
-        print("No significant hemispheric features found.")
-        combined_df = pd.concat([bilateral_df, unilateral_df], ignore_index=True)
+        print("No significant hemispheric features to visualise.")
+        combined_df = pd.concat(
+            [bilateral_df, unilateral_df],
+            ignore_index=True,
+        )
     else:
         combined_df = pd.concat(
-            [bilateral_df, unilateral_df, sig_hemi_df], ignore_index=True
+            [bilateral_df, unilateral_df, sig_hemi_df],
+            ignore_index=True,
         )
-
-    # Filter to PRS main effect only
-    combined_df = combined_df[combined_df["predictor"] == predictor].copy()
 
     # Clean and validate numeric columns
     key_cols = [
@@ -87,6 +93,9 @@ def visualise_effect_size(
         "CI_upper",
         "p_value",
     ]
+
+    # Try to convert key columns to numeric
+    # Ensure the data is valid and clean
 
     try:
         for col in key_cols:
@@ -123,6 +132,8 @@ def visualise_effect_size(
         warnings.warn(f"Unrecognized modality values found: {unknown_modalities}")
         sys.exit("Visualisation aborted due to unknown modalities.")
 
+    print("Mapping modality names is error-free, checked.")
+
     # Assign colors
     modality_palette = {
         "cortical_thickness": "#1f77b4",
@@ -132,24 +143,27 @@ def visualise_effect_size(
         "tract_FA": "#2ca02c",
         "tract_MD": "#98df8a",
     }
-    combined_df["modality_color"] = (
-        combined_df["modality"].map(modality_palette).fillna("gray")
-    )
+
+    combined_df["modality_color"] = combined_df["modality"].map(modality_palette)
 
     # Annotation logic
     def get_label(modality, feature):
+        # Remove the prefix "img_" from the feature name
+
+        feature = feature.replace("img_", "") if feature.startswith("img_") else feature
+
         if modality == "cortical_thickness":
-            return feature.replace("img_smri_thick_cdk_", "")
+            return feature.replace("smri_thick_cdk_", "")
         elif modality == "cortical_volume":
-            return feature.replace("img_smri_vol_cdk_", "")
+            return feature.replace("smri_vol_cdk_", "")
         elif modality == "cortical_surface_area":
-            return feature.replace("img_smri_area_cdk_", "")
+            return feature.replace("smri_area_cdk_", "")
         elif modality == "subcortical_volume":
-            return feature.replace("img_smri_vol_scs_", "")
+            return feature.replace("smri_vol_scs_", "")
         elif modality == "tract_FA":
-            return feature.replace("img_FA_dti_atlas_tract_", "")
+            return feature.replace("FA_dti_atlas_tract_", "")
         elif modality == "tract_MD":
-            return feature.replace("img_MD_dti_atlas_tract_", "")
+            return feature.replace("MD_dti_atlas_tract_", "")
         else:
             return feature
 
@@ -160,15 +174,31 @@ def visualise_effect_size(
         modality_mask = combined_df["modality"] == modality
         modality_df = combined_df.loc[modality_mask]
 
-        pvals = modality_df["p_value"].values
-        reject, _ = fdrcorrection(pvals, alpha=0.05)
-
-        combined_df.loc[modality_df.index, "significant"] = reject
-        combined_df.loc[modality_df.index[reject], "label"] = (
-            modality_df.loc[reject]
-            .apply(lambda row: get_label(row["modality"], row["feature"]), axis=1)
-            .values
+        print(
+            "Running `fdr_bh` : Benjamini/Hochberg  (non-negative) correction for modality",
+            modality,
         )
+
+        pvals = modality_df["p_value"].values
+
+        rejected, _, _, _ = multipletests(
+            pvals,
+            alpha=0.05,
+            method="fdr_bh",
+        )
+
+        combined_df.loc[modality_df.index, "significant"] = rejected
+
+        print("Applying FDR correction is error-free, checked.")
+
+        if rejected.any():
+            combined_df.loc[modality_df.index[rejected], "label"] = (
+                modality_df.loc[rejected]
+                .apply(lambda row: get_label(row["modality"], row["feature"]), axis=1)
+                .values
+            )
+
+        print("Assigning labels is error-free, checked.")
 
     # Save the combined DataFrame
     combined_df.to_csv(
@@ -178,6 +208,7 @@ def visualise_effect_size(
 
     # Sort by modality group
     modality_order = list(modality_palette.keys())
+
     ordered_df = pd.concat(
         [combined_df[combined_df["modality"] == mod] for mod in modality_order]
     )
@@ -207,6 +238,7 @@ def visualise_effect_size(
                 else row["coefficient"] - offset
             )
             va = "bottom" if row["coefficient"] >= 0 else "top"
+
             plt.annotate(
                 row["label"],
                 xy=(i, row["coefficient"]),
@@ -228,7 +260,7 @@ def visualise_effect_size(
     plt.xticks([])
     plt.xlabel("Brain Features (grouped by modality)")
     plt.ylabel("Beta coefficient (PRS effect)")
-    plt.title("aoDEP_SBayesR Effects on Imaging Features (FDR-corrected, per modality)")
+    plt.title("PRS Effects on Imaging Features (FDR-corrected, per modality)")
 
     # Legend
     handles = [
