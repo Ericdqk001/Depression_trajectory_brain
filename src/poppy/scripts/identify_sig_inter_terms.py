@@ -20,6 +20,9 @@ def identify_sig_inter_terms(
         "bilateral_tract_MD",
     ]
 
+    # TODO: Uncomment this
+    # interaction_term = f"C(hemisphere)[T.Right]:{prs_variable}"
+
     interaction_term = f"hemisphere[T.Right]:{prs_variable}"
 
     results_path = Path(
@@ -40,24 +43,32 @@ def identify_sig_inter_terms(
     significant_features_by_modality = {}
 
     for modality in modalities:
+        print(
+            "Running `fdr_bh` : Benjamini/Hochberg  (non-negative) correction for modality for the interaction term:",
+            modality,
+        )
+
         modality_df = repeated_results[
             (repeated_results["modality"] == modality)
             & (repeated_results["predictor"] == interaction_term)
         ]
 
-        if not modality_df.empty:
-            # Apply FDR correction
-            pvals = modality_df["p_value"].values
-            rejected, qvals, _, _ = multipletests(pvals, alpha=0.05, method="fdr_bh")
+        pvals = modality_df["p_value"].values
 
-            modality_df = modality_df.copy()
-            modality_df["q_value"] = qvals
-            modality_df["significant"] = rejected
+        rejected, qvals, _, _ = multipletests(
+            pvals,
+            alpha=0.05,
+            method="fdr_bh",
+        )
 
-            # Filter significant
-            significant = modality_df[modality_df["significant"]]
+        modality_df = modality_df.copy()
+        modality_df["q_value"] = qvals
+        modality_df["significant"] = rejected
 
-            significant_features_by_modality[modality] = significant["feature"].tolist()
+        # Filter significant
+        significant = modality_df[modality_df["significant"]]
+
+        significant_features_by_modality[modality] = significant["feature"].tolist()
 
     # Print results
     for modality, features in significant_features_by_modality.items():

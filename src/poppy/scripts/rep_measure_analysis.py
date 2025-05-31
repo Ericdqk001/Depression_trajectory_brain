@@ -70,7 +70,7 @@ def perform_repeated_measures_analysis(
     results_list = []
 
     # Loop over each modality
-    for modality in modalities[0]:
+    for modality in modalities:
         print(f"Processing {modality}")
         roi_list = feature_sets[modality]
 
