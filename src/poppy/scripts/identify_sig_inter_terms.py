@@ -7,7 +7,7 @@ from statsmodels.stats.multitest import multipletests
 
 def identify_sig_inter_terms(
     wave: str = "baseline_year_1_arm_1",
-    experiment_number: int = 1,
+    experiment_number: int = 3,
 ):
     prs_variable = "SCORESUM"
 
@@ -21,9 +21,9 @@ def identify_sig_inter_terms(
     ]
 
     # TODO: Uncomment this
-    # interaction_term = f"C(hemisphere)[T.Right]:{prs_variable}"
+    interaction_term = f"C(hemisphere)[T.Right]:{prs_variable}"
 
-    interaction_term = f"hemisphere[T.Right]:{prs_variable}"
+    # interaction_term = f"hemisphere[T.Right]:{prs_variable}"
 
     results_path = Path(
         "src",

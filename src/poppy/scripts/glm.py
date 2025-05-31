@@ -7,7 +7,7 @@ import statsmodels.formula.api as smf
 
 def perform_glm(
     wave: str = "baseline_year_1_arm_1",
-    experiment_number: int = 1,
+    experiment_number: int = 3,
 ):
     data_path = Path(
         "data",
@@ -29,7 +29,7 @@ def perform_glm(
     )
 
     # === Load data ===
-    df = pd.read_csv(
+    features_df = pd.read_csv(
         data_path,
         low_memory=False,
     )
@@ -37,8 +37,13 @@ def perform_glm(
     with open(features_json_path, "r") as f:
         feature_dict = json.load(f)
 
-    df["demo_sex_v2"] = df["demo_sex_v2"].astype("category")
-    df["img_device_label"] = df["img_device_label"].astype("category")
+    # Set categorical variables
+    features_df["demo_sex_v2"] = features_df["demo_sex_v2"].astype("category")
+    features_df["img_device_label"] = features_df["img_device_label"].astype("category")
+    features_df["src_subject_id"] = features_df["src_subject_id"].astype("category")
+    features_df["demo_comb_income_v2"] = features_df["demo_comb_income_v2"].astype(
+        "category"
+    )
 
     prs_variable = "SCORESUM"
 
@@ -52,17 +57,20 @@ def perform_glm(
     glm_results = []
 
     for modality in modalities:
+        print("Performing unilateral GLM for modality:", modality)
+
         fixed_effects = [
             "interview_age",
             "age2",
-            "demo_sex_v2",
-            "img_device_label",
+            "C(demo_sex_v2)",
+            "C(img_device_label)",
             "pc1",
             "pc2",
             "pc3",
             "pc4",
             "pc5",
             "pc6",
+            "C(demo_comb_income_v2)",
         ]
 
         if modality == "unilateral_subcortical_features":
@@ -77,26 +85,27 @@ def perform_glm(
         features = feature_dict[modality]
 
         for feature in features:
-            if feature in df.columns:
-                formula = f"{feature} ~ {prs_variable} + {' + '.join(fixed_effects)}"
-                model = smf.ols(formula=formula, data=df).fit()
+            print(f"Processing feature: {feature}")
 
-                for effect in [prs_variable]:
-                    coef = model.params[effect]
-                    pval = model.pvalues[effect]
-                    ci_low, ci_high = model.conf_int().loc[effect].values
+            formula = f"{feature} ~ {prs_variable} + {' + '.join(fixed_effects)}"
+            model = smf.ols(formula=formula, data=features_df).fit()
 
-                    glm_results.append(
-                        {
-                            "modality": modality,
-                            "feature": feature,
-                            "predictor": effect,
-                            "coefficient": coef,
-                            "p_value": pval,
-                            "CI_lower": ci_low,
-                            "CI_upper": ci_high,
-                        }
-                    )
+            for effect in [prs_variable]:
+                coef = model.params[effect]
+                pval = model.pvalues[effect]
+                ci_low, ci_high = model.conf_int().loc[effect].values
+
+                glm_results.append(
+                    {
+                        "modality": modality,
+                        "feature": feature,
+                        "predictor": effect,
+                        "coefficient": coef,
+                        "p_value": pval,
+                        "CI_lower": ci_low,
+                        "CI_upper": ci_high,
+                    }
+                )
 
     # === Save results ===
     glm_results_df = pd.DataFrame(glm_results)
@@ -113,6 +122,10 @@ def perform_glm(
 
     # === For bilateral features with significant hemi interaction terms ===
 
+    print(
+        "Performing GLM for bilateral features with significant hemi interaction terms..."
+    )
+
     # Load the features
     sig_interaction_terms_path = Path(
         results_path,
@@ -125,17 +138,26 @@ def perform_glm(
     sig_hemi_glm_results = []
 
     for modality in sig_interaction_terms.keys():
+        features = sig_interaction_terms[modality]
+
+        print(f"Processing modality: {modality}")
+
+        if not features:
+            print("No significant hemi interaction features found")
+            continue
+
         fixed_effects = [
             "interview_age",
             "age2",
-            "demo_sex_v2",
-            "img_device_label",
+            "C(demo_sex_v2)",
+            "C(img_device_label)",
             "pc1",
             "pc2",
             "pc3",
             "pc4",
             "pc5",
             "pc6",
+            "C(demo_comb_income_v2)",
         ]
 
         if modality == "bilateral_cortical_thickness":
@@ -156,8 +178,6 @@ def perform_glm(
         elif modality == "bilateral_tract_MD":
             fixed_effects.append("MD_all_dti_atlas_tract_fibers")
 
-        features = sig_interaction_terms[modality]
-
         if features:
             hemi_suffix = [
                 "lh",
@@ -165,46 +185,37 @@ def perform_glm(
             ]
 
             for feature in features:
+                print(f"Processing feature: {feature}")
+
                 for hemi in hemi_suffix:
                     feature_with_hemi = f"{feature}{hemi}"
 
                     # Remove prefix from bilateral features
                     feature_with_hemi = feature_with_hemi.replace("img_", "")
 
-                    if feature_with_hemi in df.columns:
-                        formula = f"{feature_with_hemi} ~ {prs_variable} + {' + '.join(fixed_effects)}"
+                    formula = f"{feature_with_hemi} ~ {prs_variable} + {' + '.join(fixed_effects)}"
 
-                        model = smf.ols(formula=formula, data=df).fit()
+                    model = smf.ols(formula=formula, data=features_df).fit()
 
-                        for effect in [prs_variable]:
-                            coef = model.params[effect]
-                            pval = model.pvalues[effect]
-                            ci_low, ci_high = model.conf_int().loc[effect].values
+                    for effect in [prs_variable]:
+                        coef = model.params[effect]
+                        pval = model.pvalues[effect]
+                        ci_low, ci_high = model.conf_int().loc[effect].values
 
-                            sig_hemi_glm_results.append(
-                                {
-                                    "modality": modality,
-                                    "feature": feature_with_hemi,
-                                    "predictor": effect,
-                                    "coefficient": coef,
-                                    "p_value": pval,
-                                    "CI_lower": ci_low,
-                                    "CI_upper": ci_high,
-                                }
-                            )
+                        sig_hemi_glm_results.append(
+                            {
+                                "modality": modality,
+                                "feature": feature_with_hemi,
+                                "predictor": effect,
+                                "coefficient": coef,
+                                "p_value": pval,
+                                "CI_lower": ci_low,
+                                "CI_upper": ci_high,
+                            }
+                        )
     # === Save results ===
 
-    columns = [
-        "modality",
-        "feature",
-        "predictor",
-        "coefficient",
-        "p_value",
-        "CI_lower",
-        "CI_upper",
-    ]
-
-    sig_hemi_glm_results_df = pd.DataFrame(sig_hemi_glm_results, columns=columns)
+    sig_hemi_glm_results_df = pd.DataFrame(sig_hemi_glm_results)
     sig_hemi_glm_results_df.to_csv(
         Path(
             results_path,
