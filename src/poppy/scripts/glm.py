@@ -215,7 +215,17 @@ def perform_glm(
                         )
     # === Save results ===
 
-    sig_hemi_glm_results_df = pd.DataFrame(sig_hemi_glm_results)
+    columns = [
+        "modality",
+        "feature",
+        "predictor",
+        "coefficient",
+        "p_value",
+        "CI_lower",
+        "CI_upper",
+    ]
+
+    sig_hemi_glm_results_df = pd.DataFrame(sig_hemi_glm_results, columns=columns)
     sig_hemi_glm_results_df.to_csv(
         Path(
             results_path,
@@ -226,3 +236,13 @@ def perform_glm(
     print("Significant hemisphere features GLM results saved to:")
     print(results_path / f"sig_hemi_features_glm_results-{wave}.csv")
     print("GLM analysis completed.")
+
+
+if __name__ == "__main__":
+    wave = "2_year_follow_up_y_arm_1"
+
+    experiment_number = 4
+    perform_glm(
+        wave=wave,
+        experiment_number=experiment_number,
+    )

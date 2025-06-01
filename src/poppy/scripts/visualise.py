@@ -10,7 +10,7 @@ from statsmodels.stats.multitest import multipletests
 
 def visualise_effect_size(
     wave: str = "baseline_year_1_arm_1",
-    experiment_number: int = 3,
+    experiment_number: int = 4,
 ):
     # Predictor name
     predictor = "SCORESUM"
