@@ -56,9 +56,9 @@ def perform_repeated_measures_analysis(
     features_df["img_device_label"] = features_df["img_device_label"].astype("category")
     features_df["hemisphere"] = features_df["hemisphere"].astype("category")
     features_df["src_subject_id"] = features_df["src_subject_id"].astype("category")
-    features_df["demo_comb_income_v2"] = features_df["demo_comb_income_v2"].astype(
-        "category"
-    )
+    # features_df["demo_comb_income_v2"] = features_df["demo_comb_income_v2"].astype(
+    #     "category"
+    # )
 
     # PRS variable of interest
 
@@ -86,7 +86,7 @@ def perform_repeated_measures_analysis(
             "pc4",
             "pc5",
             "pc6",
-            "C(demo_comb_income_v2)",
+            # "C(demo_comb_income_v2)",
         ]
 
         if modality == "bilateral_cortical_thickness":

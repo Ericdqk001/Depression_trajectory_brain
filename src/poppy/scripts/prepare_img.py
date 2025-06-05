@@ -2,7 +2,6 @@ import json
 import re
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
@@ -598,18 +597,18 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # Add household income
 
-    household_income = demographics_bl["demo_comb_income_v2"].copy()
+    # household_income = demographics_bl["demo_comb_income_v2"].copy()
 
     # Not available category (777:refused to answer, 999: don't know, missing values)
 
-    household_income = household_income.replace(
-        [777, 999],
-        np.nan,
-    )
+    # household_income = household_income.replace(
+    #     [777, 999],
+    #     np.nan,
+    # )
 
-    print(
-        "Subjects who either refused to answer or don't know their income are set to NA"
-    )
+    # print(
+    #     "Subjects who either refused to answer or don't know their income are set to NA"
+    # )
 
     # 6 principle components were added here to control for genetic ancestry
 
@@ -633,7 +632,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         abcd_y_lt.interview_age,
         abcd_y_lt.age2,
         family_id,
-        household_income,
+        # household_income,
     ]
 
     covariates = pd.concat(series_list, axis=1).dropna()
@@ -717,7 +716,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "demo_sex_v2",
         "img_device_label",
         "rel_family_id",
-        "demo_comb_income_v2",
+        # "demo_comb_income_v2",
     ]
 
     for col in categorical_variables:
@@ -736,7 +735,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         "demo_sex_v2",
         "img_device_label",
         "rel_family_id",
-        "demo_comb_income_v2",
+        # "demo_comb_income_v2",
     ]
 
     print(

@@ -41,9 +41,9 @@ def perform_glm(
     features_df["demo_sex_v2"] = features_df["demo_sex_v2"].astype("category")
     features_df["img_device_label"] = features_df["img_device_label"].astype("category")
     features_df["src_subject_id"] = features_df["src_subject_id"].astype("category")
-    features_df["demo_comb_income_v2"] = features_df["demo_comb_income_v2"].astype(
-        "category"
-    )
+    # features_df["demo_comb_income_v2"] = features_df["demo_comb_income_v2"].astype(
+    #     "category"
+    # )
 
     prs_variable = "SCORESUM"
 
@@ -70,7 +70,7 @@ def perform_glm(
             "pc4",
             "pc5",
             "pc6",
-            "C(demo_comb_income_v2)",
+            # "C(demo_comb_income_v2)",
         ]
 
         if modality == "unilateral_subcortical_features":
@@ -157,7 +157,7 @@ def perform_glm(
             "pc4",
             "pc5",
             "pc6",
-            "C(demo_comb_income_v2)",
+            # "C(demo_comb_income_v2)",
         ]
 
         if modality == "bilateral_cortical_thickness":

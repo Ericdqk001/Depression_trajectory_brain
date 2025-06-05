@@ -1,14 +1,15 @@
 from src.poppy.scripts.glm import perform_glm
 from src.poppy.scripts.identify_sig_inter_terms import identify_sig_inter_terms
+from src.poppy.scripts.prepare_img import preprocess
 
 # from src.poppy.scripts.prepare_img import preprocess
 from src.poppy.scripts.rep_measure_analysis import perform_repeated_measures_analysis
 from src.poppy.scripts.visualise import visualise_effect_size
 
 
-def main(wave: str = "baseline_year_1_arm_1", experiment_number: int = 4):
+def main(wave: str = "baseline_year_1_arm_1", experiment_number: int = 5):
     # Call the preprocess function from the prepare_img module
-    # preprocess(wave=wave)
+    preprocess(wave=wave)
     # Call the rep_measure_analysis function from the rep_measure_analysis module
     perform_repeated_measures_analysis(wave=wave, experiment_number=experiment_number)
     # # Call the identify_sig_inter_terms function from the identify_sig_inter_terms module
