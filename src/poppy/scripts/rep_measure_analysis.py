@@ -62,7 +62,7 @@ def perform_repeated_measures_analysis(
 
     # PRS variable of interest
 
-    prs_variable = "SCORESUM"
+    prs_variable = "score"
 
     print("The PRS variable of interest is:", prs_variable)
 

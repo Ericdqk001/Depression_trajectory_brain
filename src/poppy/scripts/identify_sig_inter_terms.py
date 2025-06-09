@@ -9,7 +9,7 @@ def identify_sig_inter_terms(
     wave: str = "baseline_year_1_arm_1",
     experiment_number: int = 3,
 ):
-    prs_variable = "SCORESUM"
+    prs_variable = "score"
 
     modalities = [
         "bilateral_cortical_thickness",

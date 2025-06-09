@@ -7,7 +7,7 @@ from src.poppy.scripts.rep_measure_analysis import perform_repeated_measures_ana
 from src.poppy.scripts.visualise import visualise_effect_size
 
 
-def main(wave: str = "baseline_year_1_arm_1", experiment_number: int = 5):
+def main(wave: str = "baseline_year_1_arm_1", experiment_number: int = 7):
     # Call the preprocess function from the prepare_img module
     preprocess(wave=wave)
     # Call the rep_measure_analysis function from the rep_measure_analysis module

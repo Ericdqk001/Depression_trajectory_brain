@@ -653,10 +653,16 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
 
     # %% TODO: This section joins the rick factors
 
+    # PRS_path = Path(
+    #     "data",
+    #     "poppy",
+    #     "adoldep_noABCD_sbayesrc.profile",
+    # )
+
     PRS_path = Path(
         "data",
         "poppy",
-        "adoldep_noABCD_sbayesrc.profile",
+        "abcd_pgcmdd3_sbayesrc_multiancestry.txt",
     )
 
     print(
@@ -665,21 +671,28 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     )
 
     # Read the PRS file as space-delimited
-    prs_df = pd.read_csv(PRS_path, delim_whitespace=True)
+    # prs_df = pd.read_csv(PRS_path, delim_whitespace=True)
 
-    prs_df = prs_df.set_index("IID").drop(columns=["FID"])
+    prs_df = pd.read_csv(PRS_path, sep="\t")
+
+    prs_df = prs_df.set_index("IID").drop(
+        columns=[
+            "ancestry",
+            "sumstat",
+        ]
+    )
 
     # Rename the index name here for later long data concatenation
     prs_df.index.name = "src_subject_id"
 
-    # Drop not needed columns
-    not_needed_cols = [
-        "PHENO",
-        "CNT",
-        "CNT2",
-    ]
+    # # Drop not needed columns
+    # not_needed_cols = [
+    #     "PHENO",
+    #     "CNT",
+    #     "CNT2",
+    # ]
 
-    prs_df = prs_df.drop(columns=not_needed_cols)
+    # prs_df = prs_df.drop(columns=not_needed_cols)
 
     # A lot removed (NOTE: you might wanna ask if this is expected)
     mri_all_features_with_prs = mri_all_features_cov.join(prs_df, how="inner")

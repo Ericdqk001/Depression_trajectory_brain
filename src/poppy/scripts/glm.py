@@ -45,7 +45,7 @@ def perform_glm(
     #     "category"
     # )
 
-    prs_variable = "SCORESUM"
+    prs_variable = "score"
 
     modalities = [
         "unilateral_subcortical_features",

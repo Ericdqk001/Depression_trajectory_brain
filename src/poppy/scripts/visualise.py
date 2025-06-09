@@ -13,7 +13,7 @@ def visualise_effect_size(
     experiment_number: int = 4,
 ):
     # Predictor name
-    predictor = "SCORESUM"
+    predictor = "score"
 
     # File paths
     results_path = Path(
