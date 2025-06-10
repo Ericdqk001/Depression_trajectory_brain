@@ -7,26 +7,58 @@ import statsmodels.formula.api as smf
 
 def perform_glm(
     wave: str = "baseline_year_1_arm_1",
-    experiment_number: int = 3,
+    version_name: str = "",
+    experiment_number: int = 1,
+    predictor="score",
 ):
+    data_store_path = Path(
+        "/",
+        "Volumes",
+        "GenScotDepression",
+    )
+
+    if data_store_path.exists():
+        print("Mounted data store path: ", data_store_path)
+
+    analysis_root_path = Path(
+        data_store_path,
+        "users",
+        "Eric",
+        "poppy_neuroimaging",
+    )
+
+    processed_data_path = Path(
+        analysis_root_path,
+        version_name,
+        "processed_data",
+    )
+
     data_path = Path(
-        "data",
-        "poppy",
+        processed_data_path,
         f"mri_all_features_with_prs_rescaled-{wave}.csv",
     )
 
     features_json_path = Path(
-        "data",
-        "poppy",
+        processed_data_path,
         "features_of_interest.json",
     )
 
-    results_path = Path(
-        "src",
-        "poppy",
+    experiments_path = Path(
+        analysis_root_path,
+        version_name,
         "experiments",
+    )
+
+    if not experiments_path.exists():
+        experiments_path.mkdir(parents=True, exist_ok=True)
+
+    results_path = Path(
+        experiments_path,
         f"exp_{experiment_number}",
     )
+
+    if not results_path.exists():
+        results_path.mkdir(parents=True, exist_ok=True)
 
     # === Load data ===
     features_df = pd.read_csv(
@@ -45,8 +77,6 @@ def perform_glm(
     #     "category"
     # )
 
-    prs_variable = "score"
-
     modalities = [
         "unilateral_subcortical_features",
         "unilateral_tract_FA",
@@ -64,12 +94,12 @@ def perform_glm(
             "age2",
             "C(demo_sex_v2)",
             "C(img_device_label)",
-            "pc1",
-            "pc2",
-            "pc3",
-            "pc4",
-            "pc5",
-            "pc6",
+            # "pc1",
+            # "pc2",
+            # "pc3",
+            # "pc4",
+            # "pc5",
+            # "pc6",
             # "C(demo_comb_income_v2)",
         ]
 
@@ -87,10 +117,10 @@ def perform_glm(
         for feature in features:
             print(f"Processing feature: {feature}")
 
-            formula = f"{feature} ~ {prs_variable} + {' + '.join(fixed_effects)}"
+            formula = f"{feature} ~ {predictor} + {' + '.join(fixed_effects)}"
             model = smf.ols(formula=formula, data=features_df).fit()
 
-            for effect in [prs_variable]:
+            for effect in [predictor]:
                 coef = model.params[effect]
                 pval = model.pvalues[effect]
                 ci_low, ci_high = model.conf_int().loc[effect].values
@@ -193,11 +223,11 @@ def perform_glm(
                     # Remove prefix from bilateral features
                     feature_with_hemi = feature_with_hemi.replace("img_", "")
 
-                    formula = f"{feature_with_hemi} ~ {prs_variable} + {' + '.join(fixed_effects)}"
+                    formula = f"{feature_with_hemi} ~ {predictor} + {' + '.join(fixed_effects)}"
 
                     model = smf.ols(formula=formula, data=features_df).fit()
 
-                    for effect in [prs_variable]:
+                    for effect in [predictor]:
                         coef = model.params[effect]
                         pval = model.pvalues[effect]
                         ci_low, ci_high = model.conf_int().loc[effect].values

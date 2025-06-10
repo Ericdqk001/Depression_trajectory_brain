@@ -7,9 +7,25 @@ from statsmodels.stats.multitest import multipletests
 
 def identify_sig_inter_terms(
     wave: str = "baseline_year_1_arm_1",
+    version_name: str = "",
     experiment_number: int = 3,
+    predictor="score",
 ):
-    prs_variable = "score"
+    data_store_path = Path(
+        "/",
+        "Volumes",
+        "GenScotDepression",
+    )
+
+    if data_store_path.exists():
+        print("Mounted data store path: ", data_store_path)
+
+    analysis_root_path = Path(
+        data_store_path,
+        "users",
+        "Eric",
+        "poppy_neuroimaging",
+    )
 
     modalities = [
         "bilateral_cortical_thickness",
@@ -21,13 +37,13 @@ def identify_sig_inter_terms(
     ]
 
     # TODO: Uncomment this
-    interaction_term = f"C(hemisphere)[T.Right]:{prs_variable}"
+    interaction_term = f"C(hemisphere)[T.Right]:{predictor}"
 
     # interaction_term = f"hemisphere[T.Right]:{prs_variable}"
 
     results_path = Path(
-        "src",
-        "poppy",
+        analysis_root_path,
+        version_name,
         "experiments",
         f"exp_{experiment_number}",
     )

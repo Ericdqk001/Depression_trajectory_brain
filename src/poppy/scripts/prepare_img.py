@@ -43,10 +43,11 @@ def preprocess(
         "processed_data",
     )
 
-    processed_data_path.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    if not processed_data_path.exists():
+        processed_data_path.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
     core_data_path = Path(
         data_store_path,
@@ -640,31 +641,31 @@ def preprocess(
 
     # 6 principle components were added here to control for genetic ancestry
 
-    pca_path = Path(
-        analysis_data_path,
-        "abcd_pca_from_randomforest.tsv",
-    )
+    # pca_path = Path(
+    #     analysis_data_path,
+    #     "abcd_pca_from_randomforest.tsv",
+    # )
 
-    pca_data = pd.read_csv(
-        pca_path,
-        sep="\t",
-        index_col=0,
-    )
+    # pca_data = pd.read_csv(
+    #     pca_path,
+    #     sep="\t",
+    #     index_col=0,
+    # )
 
-    pca_data = pca_data.set_index("IID")
+    # pca_data = pca_data.set_index("IID")
 
-    pca_data = pca_data[
-        [
-            "pc1",
-            "pc2",
-            "pc3",
-            "pc4",
-            "pc5",
-            "pc6",
-        ]
-    ]
+    # pca_data = pca_data[
+    #     [
+    #         "pc1",
+    #         "pc2",
+    #         "pc3",
+    #         "pc4",
+    #         "pc5",
+    #         "pc6",
+    #     ]
+    # ]
 
-    print("Add covariates: 6 principle components from abcd_pca_from_randomforest.tsv")
+    # print("Add covariates: 6 principle components from abcd_pca_from_randomforest.tsv")
 
     series_list = [
         demographics_bl.demo_sex_v2,
@@ -677,7 +678,7 @@ def preprocess(
 
     covariates = pd.concat(series_list, axis=1).dropna()
 
-    covariates = covariates.join(pca_data, how="inner")
+    # covariates = covariates.join(pca_data, how="inner")
 
     # Join the covariates to the brain features
 
@@ -701,7 +702,7 @@ def preprocess(
 
     PRS_path = Path(
         analysis_data_path,
-        "abcd_pgcmdd3_sbayesrc_multiancestry.txt",
+        "ABCD_CBCL_quant_pheno.txt",
     )
 
     print(
@@ -710,28 +711,35 @@ def preprocess(
     )
 
     # Read the PRS file as space-delimited
-    # prs_df = pd.read_csv(PRS_path, delim_whitespace=True)
-
-    prs_df = pd.read_csv(PRS_path, sep="\t")
-
-    prs_df = prs_df.set_index("IID").drop(
-        columns=[
-            "ancestry",
-            "sumstat",
-        ]
+    prs_df = pd.read_csv(
+        PRS_path,
+        delim_whitespace=True,
     )
+
+    prs_df = prs_df.set_index("IID")
+
+    # Select wave for prs_df
+    wave_number_map = {
+        "baseline_year_1_arm_1": 0,
+        "2_year_follow_up_y_arm_1": 2,
+        # "4_year_follow_up_y_arm_1": 3,
+    }
+
+    wave_number = wave_number_map.get(wave)
+
+    prs_df = prs_df[prs_df["time"] == wave_number]
 
     # Rename the index name here for later long data concatenation
     prs_df.index.name = "src_subject_id"
 
-    # # Drop not needed columns
-    # not_needed_cols = [
-    #     "PHENO",
-    #     "CNT",
-    #     "CNT2",
-    # ]
+    # Drop not needed columns
+    not_needed_cols = [
+        "age",
+        "sex",
+        "time",
+    ]
 
-    # prs_df = prs_df.drop(columns=not_needed_cols)
+    prs_df = prs_df.drop(columns=not_needed_cols)
 
     # A lot removed (NOTE: you might wanna ask if this is expected)
     mri_all_features_with_prs = mri_all_features_cov.join(prs_df, how="inner")

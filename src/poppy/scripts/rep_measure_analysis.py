@@ -17,6 +17,8 @@ logging.basicConfig(
 def perform_repeated_measures_analysis(
     wave: str = "baseline_year_1_arm_1",
     experiment_number: int = 1,
+    version_name: str = "CBCL_replication_test",
+    predictor: str = "CBCL_quant",
 ):
     # Define the brain modalities
     modalities = [
@@ -28,16 +30,36 @@ def perform_repeated_measures_analysis(
         "bilateral_tract_MD",
     ]
 
+    data_store_path = Path(
+        "/",
+        "Volumes",
+        "GenScotDepression",
+    )
+
+    if data_store_path.exists():
+        print("Mounted data store path: ", data_store_path)
+
+    analysis_root_path = Path(
+        data_store_path,
+        "users",
+        "Eric",
+        "poppy_neuroimaging",
+    )
+
+    processed_data_path = Path(
+        analysis_root_path,
+        version_name,
+        "processed_data",
+    )
+
     # File paths
     features_path = Path(
-        "data",
-        "poppy",
+        processed_data_path,
         f"mri_all_features_with_prs_long_rescaled-{wave}.csv",
     )
 
     feature_sets_path = Path(
-        "data",
-        "poppy",
+        processed_data_path,
         "features_of_interest.json",
     )
 
@@ -46,6 +68,8 @@ def perform_repeated_measures_analysis(
         features_path,
         low_memory=False,
     )
+
+    features_df = features_df.reset_index(drop=True)
 
     # Load feature sets for each modality
     with open(feature_sets_path, "r") as f:
@@ -62,9 +86,7 @@ def perform_repeated_measures_analysis(
 
     # PRS variable of interest
 
-    prs_variable = "score"
-
-    print("The PRS variable of interest is:", prs_variable)
+    print("The PRS variable of interest is:", predictor)
 
     # Store results here
     results_list = []
@@ -80,12 +102,12 @@ def perform_repeated_measures_analysis(
             "age2",
             "C(demo_sex_v2)",
             "C(img_device_label)",
-            "pc1",
-            "pc2",
-            "pc3",
-            "pc4",
-            "pc5",
-            "pc6",
+            # "pc1",
+            # "pc2",
+            # "pc3",
+            # "pc4",
+            # "pc5",
+            # "pc6",
             # "C(demo_comb_income_v2)",
         ]
 
@@ -111,7 +133,9 @@ def perform_repeated_measures_analysis(
             print(f"Fitting model for: {feature}")
 
             # Mixed-effects model formula with PRS x hemisphere interaction
-            formula = f"{feature} ~ C(hemisphere) * {prs_variable} + {' + '.join(fixed_effects)}"
+            formula = (
+                f"{feature} ~ C(hemisphere) * {predictor} + {' + '.join(fixed_effects)}"
+            )
 
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always", ConvergenceWarning)
@@ -130,14 +154,20 @@ def perform_repeated_measures_analysis(
                                 f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
                             )
 
+                            print(
+                                f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
+                            )
+
                 except Exception as e:
                     logging.error(
                         f"Model failed for {feature} in {modality} for {wave}: {e}"
                     )
+
+                    print(f"Model failed for {feature} in {modality} for {wave}: {e}")
                     continue
 
             # Save both main PRS effect and hemisphere interaction
-            for effect in [prs_variable, f"C(hemisphere)[T.Right]:{prs_variable}"]:
+            for effect in [predictor, f"C(hemisphere)[T.Right]:{predictor}"]:
                 if effect in model.params.index:
                     coef = model.params[effect]
                     pval = model.pvalues[effect]
@@ -157,13 +187,14 @@ def perform_repeated_measures_analysis(
 
     # Create results directory
     results_path = Path(
-        "src",
-        "poppy",
+        analysis_root_path,
+        version_name,
         "experiments",
         f"exp_{experiment_number}",
     )
 
-    results_path.mkdir(parents=True, exist_ok=True)
+    if not results_path.exists():
+        results_path.mkdir(parents=True, exist_ok=True)
 
     # Save results as CSV
     results_df = pd.DataFrame(results_list)

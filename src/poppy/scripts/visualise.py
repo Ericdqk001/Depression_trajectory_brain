@@ -11,14 +11,29 @@ from statsmodels.stats.multitest import multipletests
 def visualise_effect_size(
     wave: str = "baseline_year_1_arm_1",
     experiment_number: int = 4,
+    version_name: str = "",
+    predictor="score",
 ):
-    # Predictor name
-    predictor = "score"
+    data_store_path = Path(
+        "/",
+        "Volumes",
+        "GenScotDepression",
+    )
+
+    if data_store_path.exists():
+        print("Mounted data store path: ", data_store_path)
+
+    analysis_root_path = Path(
+        data_store_path,
+        "users",
+        "Eric",
+        "poppy_neuroimaging",
+    )
 
     # File paths
     results_path = Path(
-        "src",
-        "poppy",
+        analysis_root_path,
+        version_name,
         "experiments",
         f"exp_{experiment_number}",
     )
@@ -283,8 +298,8 @@ def visualise_effect_size(
 
     # Save
     output_dir = Path(
-        "src",
-        "poppy",
+        analysis_root_path,
+        version_name,
         "experiments",
         f"exp_{experiment_number}",
         "images",
