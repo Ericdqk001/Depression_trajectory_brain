@@ -8,22 +8,51 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 # TODO: Check for outliers of the features (+- 5SD)
 
 
-def preprocess(wave: str = "baseline_year_1_arm_1"):
+def preprocess(
+    wave: str = "baseline_year_1_arm_1",
+    version_name: str = "abcd_pgcmdd3",
+):
     print("-----------------------")
     print("Processing wave: ", wave)
     # %%
-    poppy_data_path = Path(
-        "data",
-        "poppy",
+
+    data_store_path = Path(
+        "/",
+        "Volumes",
+        "GenScotDepression",
     )
 
-    # Create the processed_data folder
-    if not poppy_data_path.exists():
-        poppy_data_path.mkdir(parents=True)
+    if data_store_path.exists():
+        print("Mounted data store path: ", data_store_path)
+
+    analysis_root_path = Path(
+        data_store_path,
+        "users",
+        "Eric",
+        "poppy_neuroimaging",
+    )
+
+    analysis_data_path = Path(
+        analysis_root_path,
+        "data",
+    )
+
+    processed_data_path = Path(
+        analysis_root_path,
+        version_name,
+        "processed_data",
+    )
+
+    processed_data_path.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
     core_data_path = Path(
+        data_store_path,
         "data",
-        "raw_data",
+        "abcd",
+        "release5.1",
         "core",
     )
 
@@ -330,8 +359,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # Rename the FA and DM features to have "lh" or "rh" suffixes
 
     dmri_data_dict_path = Path(
-        "data",
-        "poppy",
+        analysis_data_path,
         "dmri_data_dict.txt",
     )
 
@@ -613,16 +641,28 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # 6 principle components were added here to control for genetic ancestry
 
     pca_path = Path(
-        "data",
-        "poppy",
+        analysis_data_path,
         "abcd_pca_from_randomforest.tsv",
     )
 
-    pca_data = pd.read_csv(pca_path, sep="\t", index_col=0)
+    pca_data = pd.read_csv(
+        pca_path,
+        sep="\t",
+        index_col=0,
+    )
 
     pca_data = pca_data.set_index("IID")
 
-    pca_data = pca_data[["pc1", "pc2", "pc3", "pc4", "pc5", "pc6"]]
+    pca_data = pca_data[
+        [
+            "pc1",
+            "pc2",
+            "pc3",
+            "pc4",
+            "pc5",
+            "pc6",
+        ]
+    ]
 
     print("Add covariates: 6 principle components from abcd_pca_from_randomforest.tsv")
 
@@ -660,8 +700,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # )
 
     PRS_path = Path(
-        "data",
-        "poppy",
+        analysis_data_path,
         "abcd_pgcmdd3_sbayesrc_multiancestry.txt",
     )
 
@@ -775,7 +814,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # This is for performing GLM (for unilateral features)
     rescaled_mri_all_features_with_prs.to_csv(
         Path(
-            poppy_data_path,
+            processed_data_path,
             f"mri_all_features_with_prs_rescaled-{wave}.csv",
         ),
         index=True,
@@ -841,9 +880,14 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
     # %%
 
     # Save (index already captured in column)
+    processed_data_path.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     long_data.to_csv(
         Path(
-            poppy_data_path,
+            processed_data_path,
             f"mri_all_features_with_prs_long_rescaled-{wave}.csv",
         ),
         index=True,
@@ -991,7 +1035,7 @@ def preprocess(wave: str = "baseline_year_1_arm_1"):
         print(f"{modality}: {len(features)} features")
 
     features_for_repeated_effects_path = Path(
-        poppy_data_path,
+        processed_data_path,
         "features_of_interest.json",
     )
 
