@@ -10,7 +10,7 @@ from src.poppy.scripts.visualise import visualise_effect_size
 def main(
     wave: str = "baseline_year_1_arm_1",
     version_name: str = "",
-    experiment_number: int = 7,
+    experiment_number: int = 1,
     predictor: str = "CBCL_quant",
 ):
     # Call the preprocess function from the prepare_img module

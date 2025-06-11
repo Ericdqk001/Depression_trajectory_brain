@@ -181,12 +181,12 @@ def perform_glm(
             "age2",
             "C(demo_sex_v2)",
             "C(img_device_label)",
-            "pc1",
-            "pc2",
-            "pc3",
-            "pc4",
-            "pc5",
-            "pc6",
+            # "pc1",
+            # "pc2",
+            # "pc3",
+            # "pc4",
+            # "pc5",
+            # "pc6",
             # "C(demo_comb_income_v2)",
         ]
 
