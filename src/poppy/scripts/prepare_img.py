@@ -744,6 +744,8 @@ def preprocess(
     # A lot removed (NOTE: you might wanna ask if this is expected)
     mri_all_features_with_prs = mri_all_features_cov.join(prs_df, how="inner")
 
+    mri_all_features_with_prs = mri_all_features_with_prs.dropna()
+
     print(
         "Sample size with all imaging features and covariates and PRS, number = ",
         mri_all_features_with_prs.shape[0],
