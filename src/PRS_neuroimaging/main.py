@@ -1,10 +1,14 @@
-from src.poppy.scripts.glm import perform_glm
-from src.poppy.scripts.identify_sig_inter_terms import identify_sig_inter_terms
-from src.poppy.scripts.prepare_img import preprocess
+from src.PRS_neuroimaging.scripts.glm import perform_glm
+from src.PRS_neuroimaging.scripts.identify_sig_inter_terms import (
+    identify_sig_inter_terms,
+)
+from src.PRS_neuroimaging.scripts.prepare_img import preprocess
 
 # from src.poppy.scripts.prepare_img import preprocess
-from src.poppy.scripts.rep_measure_analysis import perform_repeated_measures_analysis
-from src.poppy.scripts.visualise import visualise_effect_size
+from src.PRS_neuroimaging.scripts.rep_measure_analysis import (
+    perform_repeated_measures_analysis,
+)
+from src.PRS_neuroimaging.scripts.visualise import visualise_effect_size
 
 
 def main(

@@ -166,7 +166,7 @@ data/
 images/
 img_analysis_results/
 src/img_analysis/data/
-src/poppy/analysis_results/
+src/PRS_neuroimaging/analysis_results/
 
 # mac
 .DS_Store
@@ -175,4 +175,4 @@ src/img_analysis/analysis_results
 
 src/img_analysis/experiments/
 
-src/poppy/experiments/
+src/PRS_neuroimaging/experiments/
