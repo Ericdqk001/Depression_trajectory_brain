@@ -10,7 +10,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 def preprocess(
     wave: str = "baseline_year_1_arm_1",
-    version_name: str = "abcd_pgcmdd3",
+    version_name: str = "test",
 ):
     print("-----------------------")
     logging.info("-----------------------")

@@ -40,6 +40,7 @@ def main(
     )
     if not results_path.exists():
         results_path.mkdir(parents=True, exist_ok=True)
+
     log_file = results_path / "experiment.log"
 
     logging.basicConfig(
@@ -66,7 +67,6 @@ def main(
         wave=wave,
         experiment_number=experiment_number,
         version_name=version_name,
-        predictor=predictor,
     )
 
 
@@ -78,18 +78,17 @@ if __name__ == "__main__":
         "4_year_follow_up_y_arm_1",
     ]
 
-    version_name = "abcd_adoldep_global_brain_analysis"
+    version_name = "abcd_adoldep_sbayesrc_eur_amr_global_brain_analysis"
 
     predictor = "score"
 
-    experiment_number = 2
+    experiment_number = 3
 
     for wave in all_img_waves:
-        logging.info(f"Running analysis for {wave}...")
+        print(f"Running analysis for wave: {wave}")
         main(
             wave=wave,
             version_name=version_name,
             experiment_number=experiment_number,
             predictor=predictor,
         )
-        logging.info(f"Analysis for {wave} completed.\n")
