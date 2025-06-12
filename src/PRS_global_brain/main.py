@@ -1,3 +1,6 @@
+import logging
+from pathlib import Path
+
 from src.PRS_global_brain.scripts.global_glm import perform_glm
 from src.PRS_global_brain.scripts.global_visualise import visualise_effect_size
 from src.PRS_global_brain.scripts.prepare_img import preprocess
@@ -9,6 +12,42 @@ def main(
     experiment_number: int = 1,
     predictor: str = "score",
 ):
+    data_store_path = Path(
+        "/",
+        "Volumes",
+        "GenScotDepression",
+    )
+
+    analysis_root_path = Path(
+        data_store_path,
+        "users",
+        "Eric",
+        "poppy_neuroimaging",
+    )
+
+    experiments_path = Path(
+        analysis_root_path,
+        version_name,
+        "experiments",
+    )
+
+    if not experiments_path.exists():
+        experiments_path.mkdir(parents=True, exist_ok=True)
+
+    results_path = Path(
+        experiments_path,
+        f"exp_{experiment_number}",
+    )
+    if not results_path.exists():
+        results_path.mkdir(parents=True, exist_ok=True)
+    log_file = results_path / "experiment.log"
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
+    )
+
     # Call the preprocess function from the prepare_img module
     preprocess(
         wave=wave,
@@ -43,14 +82,14 @@ if __name__ == "__main__":
 
     predictor = "score"
 
-    experiment_number = 1
+    experiment_number = 2
 
     for wave in all_img_waves:
-        print(f"Running analysis for {wave}...")
+        logging.info(f"Running analysis for {wave}...")
         main(
             wave=wave,
             version_name=version_name,
             experiment_number=experiment_number,
             predictor=predictor,
         )
-        print(f"Analysis for {wave} completed.\n")
+        logging.info(f"Analysis for {wave} completed.\n")

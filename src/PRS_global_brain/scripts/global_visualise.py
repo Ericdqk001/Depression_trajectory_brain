@@ -1,3 +1,4 @@
+import logging
 import sys
 import warnings
 from pathlib import Path
@@ -10,7 +11,6 @@ def visualise_effect_size(
     wave: str = "baseline_year_1_arm_1",
     experiment_number: int = 1,
     version_name: str = "CBCL_replication_test",
-    predictor="CBCL_quant",
 ):
     data_store_path = Path(
         "/",
@@ -19,7 +19,7 @@ def visualise_effect_size(
     )
 
     if data_store_path.exists():
-        print("Mounted data store path: ", data_store_path)
+        logging.info(f"Mounted data store path: {data_store_path}")
 
     analysis_root_path = Path(
         data_store_path,
@@ -60,13 +60,13 @@ def visualise_effect_size(
             global_feature_df[col] = pd.to_numeric(
                 global_feature_df[col], errors="coerce"
             )
-
         # Check for missing values after conversion
         if global_feature_df[key_cols].isnull().any().any():
             raise ValueError("Missing or invalid values found in numerical columns.")
-
+        logging.info("Numeric columns validated and converted: %s", key_cols)
     except Exception as e:
         warnings.warn(f"Data validation failed: {e}")
+        logging.error(f"Data validation failed: {e}")
         sys.exit("Visualisation aborted due to data issues. Please check your input.")
 
     # Validate modality mapping
@@ -75,9 +75,10 @@ def visualise_effect_size(
             global_feature_df["modality"].isnull(), "modality"
         ].unique()
         warnings.warn(f"Unrecognized modality values found: {unknown_modalities}")
+        logging.error(f"Unrecognized modality values found: {unknown_modalities}")
         sys.exit("Visualisation aborted due to unknown modalities.")
 
-    print("Mapping modality names is error-free, checked.")
+    logging.info("Mapping modality names is error-free, checked.")
 
     # Assign colors
     modality_palette = {
@@ -127,12 +128,15 @@ def visualise_effect_size(
     global_feature_df["label"] = global_feature_df.apply(
         lambda row: get_label(row["modality"], row["feature"]), axis=1
     )
-    print("All features annotated, significance based on raw p-value < 0.05.")
+    logging.info("All features annotated, significance based on raw p-value < 0.05.")
 
     # Save the combined DataFrame
     global_feature_df.to_csv(
         results_path / f"combined_fdr_corrected_prs_results-{wave}.csv",
         index=False,
+    )
+    logging.info(
+        f"Combined results saved to: {results_path / f'combined_fdr_corrected_prs_results-{wave}.csv'}"
     )
 
     # Sort by modality group
@@ -237,5 +241,6 @@ def visualise_effect_size(
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_dir / f"PRS_plot-{wave}.png", dpi=300)
+    logging.info(f"Plot saved to: {output_dir / f'PRS_plot-{wave}.png'}")
 
     plt.show()

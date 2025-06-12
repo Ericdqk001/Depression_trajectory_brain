@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import pandas as pd
@@ -15,9 +16,6 @@ def perform_glm(
         "Volumes",
         "GenScotDepression",
     )
-
-    if data_store_path.exists():
-        print("Mounted data store path: ", data_store_path)
 
     analysis_root_path = Path(
         data_store_path,
@@ -50,6 +48,9 @@ def perform_glm(
         experiments_path,
         f"exp_{experiment_number}",
     )
+
+    print("Performing GLM analysis for wave:", wave)
+    logging.info("Performing GLM analysis for wave: %s", wave)
 
     if not results_path.exists():
         results_path.mkdir(parents=True, exist_ok=True)
@@ -84,21 +85,23 @@ def perform_glm(
         "age2",
         "C(demo_sex_v2)",
         "C(img_device_label)",
-        # "pc1",
-        # "pc2",
-        # "pc3",
-        # "pc4",
-        # "pc5",
-        # "pc6",
+        "pc1",
+        "pc2",
+        "pc3",
+        "pc4",
+        "pc5",
+        "pc6",
         # "C(demo_comb_income_v2)",
     ]
 
     for modality, feature in global_brain_feature_map.items():
-        print("Performing GLM for global feature:", feature)
+        print(f"Performing GLM for global feature: {feature}")
+        logging.info(f"Performing GLM for global feature: {feature}")
 
         formula = f"{feature} ~ {predictor} + {' + '.join(fixed_effects)}"
 
-        print("Formula for GLM:", formula)
+        print(f"Formula for GLM: {formula}")
+        logging.info(f"Formula for GLM: {formula}")
 
         model = smf.ols(formula=formula, data=features_df).fit()
 
@@ -132,8 +135,8 @@ def perform_glm(
         index=False,
     )
 
-    print("GLM results saved to:")
-    print(results_path / glm_results_path)
+    print(f"GLM results saved to: {results_path / glm_results_path}")
+    logging.info(f"GLM results saved to: {results_path / glm_results_path}")
 
 
 if __name__ == "__main__":
