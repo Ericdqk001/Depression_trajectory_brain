@@ -831,7 +831,7 @@ def preprocess(
 
     PRS_path = Path(
         analysis_data_path,
-        "abcd_adoldep_sbayesrc_multiancestry.txt",
+        "abcd_adoldep_sbayesrc_eur_amr.txt",
     )
 
     print(
