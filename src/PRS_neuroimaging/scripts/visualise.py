@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 import warnings
 from pathlib import Path
@@ -21,7 +22,7 @@ def visualise_effect_size(
     )
 
     if data_store_path.exists():
-        print("Mounted data store path: ", data_store_path)
+        logging.info("Mounted data store path: %s", data_store_path)
 
     analysis_root_path = Path(
         data_store_path,
@@ -72,7 +73,7 @@ def visualise_effect_size(
     to_remove = set()
     for modality, features in sig_interaction_terms.items():
         for feature in features:
-            print(
+            logging.info(
                 f"Removing {modality} - {feature} due to significant interaction term."
             )
             to_remove.add((modality, feature))
@@ -84,13 +85,13 @@ def visualise_effect_size(
 
     bilateral_df = bilateral_df[mask].reset_index(drop=True).copy()
 
-    print("Removing features is error-free, checked.")
+    logging.info("Removing features is error-free, checked.")
 
     # Optional: Load sig_hemi_df if not empty
     sig_hemi_df = pd.read_csv(sig_hemi_features_glm_results_path)
 
     if sig_hemi_df.empty:
-        print("No significant hemispheric features to visualise.")
+        logging.info("No significant hemispheric features to visualise.")
         combined_df = pd.concat(
             [bilateral_df, unilateral_df],
             ignore_index=True,
@@ -115,13 +116,11 @@ def visualise_effect_size(
     try:
         for col in key_cols:
             combined_df[col] = pd.to_numeric(combined_df[col], errors="coerce")
-
-        # Check for missing values after conversion
         if combined_df[key_cols].isnull().any().any():
             raise ValueError("Missing or invalid values found in numerical columns.")
-
     except Exception as e:
         warnings.warn(f"Data validation failed: {e}")
+        logging.error(f"Data validation failed: {e}")
         sys.exit("Visualisation aborted due to data issues. Please check your input.")
 
     # Collapse modality labels
@@ -145,9 +144,10 @@ def visualise_effect_size(
             combined_df["modality"].isnull(), "modality"
         ].unique()
         warnings.warn(f"Unrecognized modality values found: {unknown_modalities}")
+        logging.error(f"Unrecognized modality values found: {unknown_modalities}")
         sys.exit("Visualisation aborted due to unknown modalities.")
 
-    print("Mapping modality names is error-free, checked.")
+    logging.info("Mapping modality names is error-free, checked.")
 
     # Assign colors
     modality_palette = {
@@ -189,8 +189,8 @@ def visualise_effect_size(
         modality_mask = combined_df["modality"] == modality
         modality_df = combined_df.loc[modality_mask]
 
-        print(
-            "Running `fdr_bh` : Benjamini/Hochberg  (non-negative) correction for modality",
+        logging.info(
+            "Running `fdr_bh` : Benjamini/Hochberg  (non-negative) correction for modality %s",
             modality,
         )
 
@@ -204,7 +204,7 @@ def visualise_effect_size(
 
         combined_df.loc[modality_df.index, "significant"] = rejected
 
-        print("Applying FDR correction is error-free, checked.")
+        logging.info("Applying FDR correction is error-free, checked.")
 
         if rejected.any():
             combined_df.loc[modality_df.index[rejected], "label"] = (
@@ -213,7 +213,7 @@ def visualise_effect_size(
                 .values
             )
 
-        print("Assigning labels is error-free, checked.")
+        logging.info("Assigning labels is error-free, checked.")
 
     # Save the combined DataFrame
     combined_df.to_csv(

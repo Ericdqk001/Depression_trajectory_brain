@@ -1,8 +1,11 @@
 import json
+import logging
+import warnings
 from pathlib import Path
 
 import pandas as pd
 import statsmodels.formula.api as smf
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
 
 
 def perform_glm(
@@ -87,19 +90,19 @@ def perform_glm(
     glm_results = []
 
     for modality in modalities:
-        print("Performing unilateral GLM for modality:", modality)
+        logging.info("Performing unilateral GLM for modality: %s", modality)
 
         fixed_effects = [
             "interview_age",
             "age2",
             "C(demo_sex_v2)",
             "C(img_device_label)",
-            # "pc1",
-            # "pc2",
-            # "pc3",
-            # "pc4",
-            # "pc5",
-            # "pc6",
+            "pc1",
+            "pc2",
+            "pc3",
+            "pc4",
+            "pc5",
+            "pc6",
             # "C(demo_comb_income_v2)",
         ]
 
@@ -115,10 +118,27 @@ def perform_glm(
         features = feature_dict[modality]
 
         for feature in features:
-            print(f"Processing feature: {feature}")
+            logging.info("Processing feature: %s", feature)
 
             formula = f"{feature} ~ {predictor} + {' + '.join(fixed_effects)}"
-            model = smf.ols(formula=formula, data=features_df).fit()
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", ConvergenceWarning)
+                try:
+                    model = smf.ols(formula=formula, data=features_df).fit()
+                    for warning in w:
+                        if issubclass(warning.category, ConvergenceWarning):
+                            logging.warning(
+                                f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
+                            )
+                            print(
+                                f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
+                            )
+                except Exception as e:
+                    logging.error(
+                        f"Model failed for {feature} in {modality} for {wave}: {e}"
+                    )
+                    print(f"Model failed for {feature} in {modality} for {wave}: {e}")
+                    continue
 
             for effect in [predictor]:
                 coef = model.params[effect]
@@ -147,12 +167,12 @@ def perform_glm(
         index=False,
     )
 
-    print("GLM results saved to:")
-    print(results_path / f"unilateral_features_glm_results-{wave}.csv")
+    logging.info("GLM results saved to:")
+    logging.info(results_path / f"unilateral_features_glm_results-{wave}.csv")
 
     # === For bilateral features with significant hemi interaction terms ===
 
-    print(
+    logging.info(
         "Performing GLM for bilateral features with significant hemi interaction terms..."
     )
 
@@ -170,10 +190,10 @@ def perform_glm(
     for modality in sig_interaction_terms.keys():
         features = sig_interaction_terms[modality]
 
-        print(f"Processing modality: {modality}")
+        logging.info(f"Processing modality: {modality}")
 
         if not features:
-            print("No significant hemi interaction features found")
+            logging.info("No significant hemi interaction features found")
             continue
 
         fixed_effects = [
@@ -181,12 +201,12 @@ def perform_glm(
             "age2",
             "C(demo_sex_v2)",
             "C(img_device_label)",
-            # "pc1",
-            # "pc2",
-            # "pc3",
-            # "pc4",
-            # "pc5",
-            # "pc6",
+            "pc1",
+            "pc2",
+            "pc3",
+            "pc4",
+            "pc5",
+            "pc6",
             # "C(demo_comb_income_v2)",
         ]
 
@@ -215,34 +235,31 @@ def perform_glm(
             ]
 
             for feature in features:
-                print(f"Processing feature: {feature}")
-
+                logging.info(f"Processing feature: {feature}")
                 for hemi in hemi_suffix:
                     feature_with_hemi = f"{feature}{hemi}"
-
-                    # Remove prefix from bilateral features
                     feature_with_hemi = feature_with_hemi.replace("img_", "")
-
                     formula = f"{feature_with_hemi} ~ {predictor} + {' + '.join(fixed_effects)}"
-
-                    model = smf.ols(formula=formula, data=features_df).fit()
-
-                    for effect in [predictor]:
-                        coef = model.params[effect]
-                        pval = model.pvalues[effect]
-                        ci_low, ci_high = model.conf_int().loc[effect].values
-
-                        sig_hemi_glm_results.append(
-                            {
-                                "modality": modality,
-                                "feature": feature_with_hemi,
-                                "predictor": effect,
-                                "coefficient": coef,
-                                "p_value": pval,
-                                "CI_lower": ci_low,
-                                "CI_upper": ci_high,
-                            }
-                        )
+                    with warnings.catch_warnings(record=True) as w:
+                        warnings.simplefilter("always", ConvergenceWarning)
+                        try:
+                            model = smf.ols(formula=formula, data=features_df).fit()
+                            for warning in w:
+                                if issubclass(warning.category, ConvergenceWarning):
+                                    logging.warning(
+                                        f"Convergence warning for {feature_with_hemi} in {modality} for {wave}: {warning.message}"
+                                    )
+                                    print(
+                                        f"Convergence warning for {feature_with_hemi} in {modality} for {wave}: {warning.message}"
+                                    )
+                        except Exception as e:
+                            logging.error(
+                                f"Model failed for {feature_with_hemi} in {modality} for {wave}: {e}"
+                            )
+                            print(
+                                f"Model failed for {feature_with_hemi} in {modality} for {wave}: {e}"
+                            )
+                            continue
     # === Save results ===
 
     columns = [
@@ -263,16 +280,10 @@ def perform_glm(
         ),
         index=False,
     )
-    print("Significant hemisphere features GLM results saved to:")
-    print(results_path / f"sig_hemi_features_glm_results-{wave}.csv")
-    print("GLM analysis completed.")
+    logging.info("Significant hemisphere features GLM results saved to:")
+    logging.info(results_path / f"sig_hemi_features_glm_results-{wave}.csv")
+    logging.info("GLM analysis completed.")
 
 
 if __name__ == "__main__":
-    wave = "2_year_follow_up_y_arm_1"
-
-    experiment_number = 4
-    perform_glm(
-        wave=wave,
-        experiment_number=experiment_number,
-    )
+    pass

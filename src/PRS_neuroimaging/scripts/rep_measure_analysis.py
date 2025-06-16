@@ -7,12 +7,6 @@ import pandas as pd
 import statsmodels.formula.api as smf
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
 
-logging.basicConfig(
-    filename="model_fitting.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
-
 
 def perform_repeated_measures_analysis(
     wave: str = "baseline_year_1_arm_1",
@@ -38,6 +32,7 @@ def perform_repeated_measures_analysis(
 
     if data_store_path.exists():
         print("Mounted data store path: ", data_store_path)
+        logging.info("Mounted data store path: %s", data_store_path)
 
     analysis_root_path = Path(
         data_store_path,
@@ -87,6 +82,7 @@ def perform_repeated_measures_analysis(
     # PRS variable of interest
 
     print("The PRS variable of interest is:", predictor)
+    logging.info("The PRS variable of interest is: %s", predictor)
 
     # Store results here
     results_list = []
@@ -94,6 +90,7 @@ def perform_repeated_measures_analysis(
     # Loop over each modality
     for modality in modalities:
         print(f"Processing {modality}")
+        logging.info("Processing %s", modality)
         roi_list = feature_sets[modality]
 
         # Fixed effects to include
@@ -102,12 +99,12 @@ def perform_repeated_measures_analysis(
             "age2",
             "C(demo_sex_v2)",
             "C(img_device_label)",
-            # "pc1",
-            # "pc2",
-            # "pc3",
-            # "pc4",
-            # "pc5",
-            # "pc6",
+            "pc1",
+            "pc2",
+            "pc3",
+            "pc4",
+            "pc5",
+            "pc6",
             # "C(demo_comb_income_v2)",
         ]
 
@@ -131,6 +128,7 @@ def perform_repeated_measures_analysis(
 
         for feature in roi_list:
             print(f"Fitting model for: {feature}")
+            logging.info("Fitting model for: %s", feature)
 
             # Mixed-effects model formula with PRS x hemisphere interaction
             formula = (
@@ -153,7 +151,6 @@ def perform_repeated_measures_analysis(
                             logging.warning(
                                 f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
                             )
-
                             print(
                                 f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
                             )
@@ -162,7 +159,6 @@ def perform_repeated_measures_analysis(
                     logging.error(
                         f"Model failed for {feature} in {modality} for {wave}: {e}"
                     )
-
                     print(f"Model failed for {feature} in {modality} for {wave}: {e}")
                     continue
 
@@ -207,7 +203,9 @@ def perform_repeated_measures_analysis(
     )
 
     print(f"Repeated analysis complete for {wave}. Results saved to:")
+    logging.info(f"Repeated analysis complete for {wave}. Results saved to:")
     print(results_path / f"repeated_bilateral_prs_results-{wave}.csv")
+    logging.info(results_path / f"repeated_bilateral_prs_results-{wave}.csv")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,6 @@
+import logging
+from pathlib import Path
+
 from src.PRS_neuroimaging.scripts.glm import perform_glm
 from src.PRS_neuroimaging.scripts.identify_sig_inter_terms import (
     identify_sig_inter_terms,
@@ -15,8 +18,45 @@ def main(
     wave: str = "baseline_year_1_arm_1",
     version_name: str = "",
     experiment_number: int = 1,
-    predictor: str = "CBCL_quant",
+    predictor: str = "",
 ):
+    data_store_path = Path(
+        "/",
+        "Volumes",
+        "GenScotDepression",
+    )
+
+    analysis_root_path = Path(
+        data_store_path,
+        "users",
+        "Eric",
+        "poppy_neuroimaging",
+    )
+
+    experiments_path = Path(
+        analysis_root_path,
+        version_name,
+        "experiments",
+    )
+
+    if not experiments_path.exists():
+        experiments_path.mkdir(parents=True, exist_ok=True)
+
+    results_path = Path(
+        experiments_path,
+        f"exp_{experiment_number}",
+    )
+    if not results_path.exists():
+        results_path.mkdir(parents=True, exist_ok=True)
+
+    log_file = results_path / "experiment.log"
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
+    )
+
     # Call the preprocess function from the prepare_img module
     preprocess(
         wave=wave,
@@ -57,12 +97,12 @@ if __name__ == "__main__":
     all_img_waves = [
         "baseline_year_1_arm_1",
         "2_year_follow_up_y_arm_1",
-        # "4_year_follow_up_y_arm_1",
+        "4_year_follow_up_y_arm_1",
     ]
 
-    version_name = "CBCL_replication_test"
+    version_name = "abcd_pgcmdd3_sbayesrc_multiancestry"
 
-    predictor = "CBCL_quant"
+    predictor = "score"
 
     experiment_number = 1
 

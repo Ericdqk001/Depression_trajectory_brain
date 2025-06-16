@@ -1,8 +1,10 @@
 import logging
+import warnings
 from pathlib import Path
 
 import pandas as pd
 import statsmodels.formula.api as smf
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
 
 
 def perform_glm(
@@ -103,7 +105,25 @@ def perform_glm(
         print(f"Formula for GLM: {formula}")
         logging.info(f"Formula for GLM: {formula}")
 
-        model = smf.ols(formula=formula, data=features_df).fit()
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", ConvergenceWarning)
+            try:
+                model = smf.ols(formula=formula, data=features_df).fit()
+                # Log any convergence warnings
+                for warning in w:
+                    if issubclass(warning.category, ConvergenceWarning):
+                        logging.warning(
+                            f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
+                        )
+                        print(
+                            f"Convergence warning for {feature} in {modality} for {wave}: {warning.message}"
+                        )
+            except Exception as e:
+                logging.error(
+                    f"Model failed for {feature} in {modality} for {wave}: {e}"
+                )
+                print(f"Model failed for {feature} in {modality} for {wave}: {e}")
+                continue
 
         for effect in [predictor]:
             coef = model.params[effect]

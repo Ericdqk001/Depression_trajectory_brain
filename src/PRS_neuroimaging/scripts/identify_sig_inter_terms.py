@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 
 import pandas as pd
@@ -18,7 +19,7 @@ def identify_sig_inter_terms(
     )
 
     if data_store_path.exists():
-        print("Mounted data store path: ", data_store_path)
+        logging.info("Mounted data store path: %s", data_store_path)
 
     analysis_root_path = Path(
         data_store_path,
@@ -59,8 +60,8 @@ def identify_sig_inter_terms(
     significant_features_by_modality = {}
 
     for modality in modalities:
-        print(
-            "Running `fdr_bh` : Benjamini/Hochberg  (non-negative) correction for modality for the interaction term:",
+        logging.info(
+            "Running `fdr_bh` : Benjamini/Hochberg  (non-negative) correction for modality for the interaction term: %s",
             modality,
         )
 
@@ -88,7 +89,7 @@ def identify_sig_inter_terms(
 
     # Print results
     for modality, features in significant_features_by_modality.items():
-        print(f"{modality}: {features}")
+        logging.info(f"{modality}: {features}")
 
     # Save results to json
     with open(

@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from pathlib import Path
 
@@ -10,10 +11,10 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 def preprocess(
     wave: str = "baseline_year_1_arm_1",
-    version_name: str = "abcd_pgcmdd3",
+    version_name: str = "test",
 ):
-    print("-----------------------")
-    print("Processing wave: ", wave)
+    logging.info("-----------------------")
+    logging.info("Processing wave: %s", wave)
     # %%
 
     data_store_path = Path(
@@ -23,7 +24,7 @@ def preprocess(
     )
 
     if data_store_path.exists():
-        print("Mounted data store path: ", data_store_path)
+        logging.info("Mounted data store path: %s", data_store_path)
 
     analysis_root_path = Path(
         data_store_path,
@@ -100,13 +101,16 @@ def preprocess(
 
     mri_y_qc_incl = mri_y_qc_incl[mri_y_qc_incl.eventname == wave]
 
-    print("Sample size with MRI recommended inclusion", mri_y_qc_incl.shape[0])
+    logging.info(
+        "Sample size with MRI recommended inclusion %d", mri_y_qc_incl.shape[0]
+    )
 
     # Remove subjects with intersex from the imaging data
     mri_y_qc_incl = mri_y_qc_incl[~mri_y_qc_incl.index.isin(inter_sex_subs)]
 
-    print(
-        "Remove intersex subjects from the imaging data, number = ", len(inter_sex_subs)
+    logging.info(
+        "Remove intersex subjects from the imaging data, number = %d",
+        len(inter_sex_subs),
     )
 
     # %%
@@ -119,10 +123,10 @@ def preprocess(
     # 2. dmri data recommended for inclusion (YES)
     # 3. Overall MRI clinical report score < 3, which excludes subjects with neurological issues.
 
-    print("Quality Control Criteria:")
-    print("T1 data recommended for inclusion = 1")
-    print("dMRI data recommended for inclusion = 1")
-    print("Overall MRI clinical report score < 3")
+    logging.info("Quality Control Criteria:")
+    logging.info("T1 data recommended for inclusion = 1")
+    logging.info("dMRI data recommended for inclusion = 1")
+    logging.info("Overall MRI clinical report score < 3")
 
     mri_clin_report_path = Path(
         imaging_path,
@@ -146,8 +150,8 @@ def preprocess(
 
     qc_passed_mask = mri_clin_report_bl.index.isin(qc_passed_indices)
 
-    print(
-        "Sample size after QC passed, number = ",
+    logging.info(
+        "Sample size after QC passed, number = %d",
         mri_clin_report_bl[qc_passed_mask].shape[0],
     )
 
@@ -155,8 +159,8 @@ def preprocess(
 
     subs_pass = mri_clin_report_bl[qc_passed_mask & score_mask]
 
-    print(
-        "sample size after QC passed and clinical report (score < 3), number = ",
+    logging.info(
+        "sample size after QC passed and clinical report (score < 3), number = %d",
         subs_pass.shape[0],
     )
 
@@ -237,8 +241,8 @@ def preprocess(
     # Cortical thickness data
     mri_y_smr_thk_dst = mri_y_smr_thk_dst[mri_y_smr_thk_dst.eventname == wave]
 
-    print(
-        "Sample size with T1w cortical thickness data, number =",
+    logging.info(
+        "Sample size with T1w cortical thickness data, number = %d",
         mri_y_smr_thk_dst.shape[0],
     )
 
@@ -246,16 +250,16 @@ def preprocess(
         mri_y_smr_thk_dst.index.isin(subs_pass.index)
     ].dropna()
 
-    print(
-        "Sample size with complete CT data after QC, number =",
+    logging.info(
+        "Sample size with complete CT data after QC, number = %d",
         t1w_cortical_thickness_pass.shape[0],
     )
 
     # Cortical volume data
     mri_y_smr_vol_dst = mri_y_smr_vol_dst[mri_y_smr_vol_dst.eventname == wave]
 
-    print(
-        "Sample size with T1w cortical volume data, number =",
+    logging.info(
+        "Sample size with T1w cortical volume data, number = %d",
         mri_y_smr_vol_dst.shape[0],
     )
 
@@ -263,8 +267,8 @@ def preprocess(
         mri_y_smr_vol_dst.index.isin(subs_pass.index)
     ].dropna()
 
-    print(
-        "Sample size with complete CV data after QC, number =",
+    logging.info(
+        "Sample size with complete CV data after QC, number = %d",
         t1w_cortical_volume_pass.shape[0],
     )
 
@@ -272,8 +276,8 @@ def preprocess(
 
     mri_y_smr_area_dst = mri_y_smr_area_dst[mri_y_smr_area_dst.eventname == wave]
 
-    print(
-        "Sample size with T1w cortical surface area data, number =",
+    logging.info(
+        "Sample size with T1w cortical surface area data, number = %d",
         mri_y_smr_area_dst.shape[0],
     )
 
@@ -281,8 +285,8 @@ def preprocess(
         mri_y_smr_area_dst.index.isin(subs_pass.index)
     ].dropna()
 
-    print(
-        "Sample size with complete SA data after QC, number =",
+    logging.info(
+        "Sample size with complete SA data after QC, number = %d",
         t1w_cortical_surface_area_pass.shape[0],
     )
 
@@ -290,8 +294,8 @@ def preprocess(
 
     t1w_subcortical_volume = mri_y_smr_vol_aseg[mri_y_smr_vol_aseg.eventname == wave]
 
-    print(
-        "Sample size with T1w subcortical volume data, number =",
+    logging.info(
+        "Sample size with T1w subcortical volume data, number = %d",
         t1w_subcortical_volume.shape[0],
     )
 
@@ -312,11 +316,11 @@ def preprocess(
         columns=subcortical_all_zeros_cols
     ).dropna()
 
-    print("Subcortical all zeros columns dropped")
-    print("Column names: ", subcortical_all_zeros_cols)
+    logging.info("Subcortical all zeros columns dropped")
+    logging.info("Column names: %s", subcortical_all_zeros_cols)
 
-    print(
-        "Sample size with complete subcortical volume data after QC, number =",
+    logging.info(
+        "Sample size with complete subcortical volume data after QC, number = %d",
         t1w_subcortical_volume_pass.shape[0],
     )
 
@@ -326,8 +330,8 @@ def preprocess(
         mri_y_dti_fa_fs_at.eventname == wave
     ]
 
-    print(
-        "Sample size with dMRI fractional anisotropy data, number =",
+    logging.info(
+        "Sample size with dMRI fractional anisotropy data, number = %d",
         dmir_fractional_anisotropy.shape[0],
     )
 
@@ -336,15 +340,15 @@ def preprocess(
         dmir_fractional_anisotropy.index.isin(subs_pass.index)
     ]
 
-    print(
-        "Sample size with complete FA data after QC, number =",
+    logging.info(
+        "Sample size with complete FA data after QC, number = %d",
         dmir_fractional_anisotropy_pass.shape[0],
     )
 
     dmir_mean_diffusivity = mri_y_dti_md_fs_at[mri_y_dti_md_fs_at.eventname == wave]
 
-    print(
-        "Sample size with dMRI mean diffusivity data, number =",
+    logging.info(
+        "Sample size with dMRI mean diffusivity data, number = %d",
         dmir_mean_diffusivity.shape[0],
     )
 
@@ -352,8 +356,8 @@ def preprocess(
         dmir_mean_diffusivity.index.isin(subs_pass.index)
     ]
 
-    print(
-        "Sample size with complete MD data after QC, number =",
+    logging.info(
+        "Sample size with complete MD data after QC, number = %d",
         dmir_mean_diffusivity_pass.shape[0],
     )
 
@@ -439,14 +443,14 @@ def preprocess(
 
     dmir_mean_diffusivity_pass = sort_dmri_columns(dmir_mean_diffusivity_pass)
 
-    print("Sort dMRI FA/MD columns by number at the end of each column name")
-    print("For example: 'dmdtifp1_43', ''dmdtifp1_44', 'dmdtifp1_45'")
-    print("Sorting is error-free, checked")
+    logging.info("Sort dMRI FA/MD columns by number at the end of each column name")
+    logging.info("For example: 'dmdtifp1_43', ''dmdtifp1_44', 'dmdtifp1_45'")
+    logging.info("Sorting is error-free, checked")
 
     # Parse the DTI features
     dti_features_mapping = parse_dti_features_pretty(dmri_data_dict)
 
-    print(
+    logging.info(
         "Parsing FA/MD feature descriptions to new feature names is error-free, Checked"
     )
 
@@ -456,7 +460,7 @@ def preprocess(
         inplace=True,
     )
 
-    print("Renaming FA features to new feature names is error-free, Checked")
+    logging.info("Renaming FA features to new feature names is error-free, Checked")
 
     # Drop these columns because they are duplicates with a slightly different regional focus
     FA_cols_to_drop = [
@@ -468,13 +472,13 @@ def preprocess(
         "FA_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
     ]
 
-    print(
+    logging.info(
         "Drop the following FA columns because they are duplicates with a slightly different regional focus:"
     )
-    print(FA_cols_to_drop)
+    logging.info("%s", FA_cols_to_drop)
 
-    print(
-        "FA number of features before dropping columns: ",
+    logging.info(
+        "FA number of features before dropping columns: %d",
         dmir_fractional_anisotropy_pass.shape[1],
     )
 
@@ -482,15 +486,15 @@ def preprocess(
         columns=FA_cols_to_drop
     )
 
-    print(
-        "FA number of features after dropping columns: ",
+    logging.info(
+        "FA number of features after dropping columns: %d",
         dmir_fractional_anisotropy_pass.shape[1],
     )
 
     dmir_fractional_anisotropy_pass = dmir_fractional_anisotropy_pass.dropna()
 
-    print(
-        "Sample size with complete FA data after QC, number =",
+    logging.info(
+        "Sample size with complete FA data after QC, number = %d",
         dmir_fractional_anisotropy_pass.shape[0],
     )
 
@@ -499,7 +503,7 @@ def preprocess(
         inplace=True,
     )
 
-    print("Renaming MD features to new feature names is error-free, Checked")
+    logging.info("Renaming MD features to new feature names is error-free, Checked")
 
     MD_cols_to_drop = [
         "MD_dti_atlas_tract_fornix_excluding_fimbrialh",
@@ -509,13 +513,13 @@ def preprocess(
         "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlylh",
         "MD_dti_atlas_tract_superior_corticostriate_parietal_cortex_onlyrh",
     ]
-    print(
+    logging.info(
         "Drop the following MD columns because they are duplicates with a slightly different regional focus:"
     )
-    print(MD_cols_to_drop)
+    logging.info("%s", MD_cols_to_drop)
 
-    print(
-        "MD number of features before dropping columns: ",
+    logging.info(
+        "MD number of features before dropping columns: %d",
         dmir_mean_diffusivity_pass.shape[1],
     )
 
@@ -523,15 +527,15 @@ def preprocess(
         columns=MD_cols_to_drop
     )
 
-    print(
-        "MD number of features after dropping columns: ",
+    logging.info(
+        "MD number of features after dropping columns: %d",
         dmir_mean_diffusivity_pass.shape[1],
     )
 
     dmir_mean_diffusivity_pass = dmir_mean_diffusivity_pass.dropna()
 
-    print(
-        "Sample size with complete MD data after QC, number =",
+    logging.info(
+        "Sample size with complete MD data after QC, number = %d",
         dmir_mean_diffusivity_pass.shape[0],
     )
 
@@ -549,14 +553,16 @@ def preprocess(
         axis=1,
     )
 
-    print("Sample size with all imaging features, number = ", mri_all_features.shape[0])
+    logging.info(
+        "Sample size with all imaging features, number = %d", mri_all_features.shape[0]
+    )
 
     # Drop eventname column
     mri_all_features = mri_all_features.drop(columns="eventname")
 
     ### Add covariates to be considered in the analysis
 
-    print("Adding covariates to the imaging features")
+    logging.info("Adding covariates to the imaging features")
 
     # For site information (imaging device ID)
     mri_y_adm_info_path = Path(
@@ -578,11 +584,13 @@ def preprocess(
     # encoder and return encoded label
     label = le.fit_transform(mri_y_adm_info["mri_info_deviceserialnumber"])
 
-    print("Add covariate: mri_info_deviceserialnumber")
+    logging.info("Add covariate: mri_info_deviceserialnumber")
 
     mri_y_adm_info["img_device_label"] = label
 
-    print("Using LabelEncoder to encode the imaging device ID is error-free, Checked")
+    logging.info(
+        "Using LabelEncoder to encode the imaging device ID is error-free, Checked"
+    )
 
     # For interview_age (in months)
     abcd_y_lt_path = Path(
@@ -602,7 +610,7 @@ def preprocess(
 
     abcd_y_lt["age2"] = abcd_y_lt.interview_age**2
 
-    print("Add covariate: interview_age and age2 (sqaured interview_age)")
+    logging.info("Add covariate: interview_age and age2 (sqaured interview_age)")
 
     # Add family ID
 
@@ -687,8 +695,8 @@ def preprocess(
         how="left",
     ).dropna()
 
-    print(
-        "Sample size with all imaging features and covariates, number = ",
+    logging.info(
+        "Sample size with all imaging features and covariates, number = %d",
         mri_all_features_cov.shape[0],
     )
 
@@ -702,13 +710,10 @@ def preprocess(
 
     PRS_path = Path(
         analysis_data_path,
-        "abcd_adoldep_sbayesrc_multiancestry.txt",
+        "abcd_pgcmdd3_sbayesrc_multiancestry.txt",
     )
 
-    print(
-        "PRS data file name: ",
-        PRS_path.name,
-    )
+    logging.info("PRS data file name: %s", PRS_path.name)
 
     # Read the PRS file as space-delimited
     prs_df = pd.read_csv(
@@ -724,21 +729,20 @@ def preprocess(
 
     # No missing values here no need to drop columns
     # # Drop not needed columns
-    # not_needed_cols = [
-    #     "age",
-    #     "sex",
-    #     "time",
-    # ]
+    not_needed_cols = [
+        "ancestry",
+        "sumstat",
+    ]
 
-    # prs_df = prs_df.drop(columns=not_needed_cols)
+    prs_df = prs_df.drop(columns=not_needed_cols)
 
     # A lot removed (NOTE: you might wanna ask if this is expected)
     mri_all_features_with_prs = mri_all_features_cov.join(prs_df, how="inner")
 
     mri_all_features_with_prs = mri_all_features_with_prs.dropna()
 
-    print(
-        "Sample size with all imaging features and covariates and PRS, number = ",
+    logging.info(
+        "Sample size with all imaging features and covariates and PRS, number = %d",
         mri_all_features_with_prs.shape[0],
     )
 
@@ -746,7 +750,7 @@ def preprocess(
 
     seed = 42
 
-    print("Keeping unrelated subjects, random seed = ", seed)
+    logging.info("Keeping unrelated subjects, random seed = %d", seed)
 
     mri_all_features_with_prs = mri_all_features_with_prs.loc[
         mri_all_features_with_prs.groupby(["rel_family_id"]).apply(
@@ -754,16 +758,16 @@ def preprocess(
         ),
     ]
 
-    print("Keeping unrelated subjects is error-free, Checked")
+    logging.info("Keeping unrelated subjects is error-free, Checked")
 
-    print(
-        "Sample size after keeping unrelated subjects, number = ",
+    logging.info(
+        "Sample size after keeping unrelated subjects, number = %d",
         mri_all_features_with_prs.shape[0],
     )
 
     # Standardize the continuous variables
 
-    print("Standardizing the continuous variables")
+    logging.info("Standardizing the continuous variables")
 
     categorical_variables = [
         "demo_sex_v2",
@@ -778,10 +782,8 @@ def preprocess(
                 "category"
             )
 
-    print(
-        "Make sure the following columns are categorical: ",
-    )
-    print(", ".join(categorical_variables))
+    logging.info("Make sure the following columns are categorical: ")
+    logging.info(", ".join(categorical_variables))
 
     # Columns to exclude from standardization
     exclude_cols = [
@@ -791,10 +793,8 @@ def preprocess(
         # "demo_comb_income_v2",
     ]
 
-    print(
-        "Excluding the following columns from standardisation: ",
-        ", ".join(exclude_cols),
-    )
+    logging.info("Excluding the following columns from standardisation: ")
+    logging.info(", ".join(exclude_cols))
 
     # Get columns to scale (everything else)
     cols_to_scale = [
@@ -808,7 +808,7 @@ def preprocess(
         mri_all_features_with_prs[cols_to_scale]
     )
 
-    print("Standardization of continuous variables is error-free, Checked")
+    logging.info("Standardization of continuous variables is error-free, Checked")
 
     rescaled_mri_all_features_with_prs = mri_all_features_with_prs.copy()
 
@@ -821,29 +821,30 @@ def preprocess(
         index=True,
     )
 
-    print("Rescaled imaging features with PRS saved to CSV")
+    logging.info("Rescaled imaging features with PRS saved to CSV")
 
-    print(
-        f"Final Sample size for wave:{wave}",
+    logging.info(
+        "Final Sample size for wave:%s %d",
+        wave,
         rescaled_mri_all_features_with_prs.shape[0],
     )
 
     ### Create long-form data for left and right hemisphere features
     # Identify left/right hemisphere columns
 
-    print("Creating long-form data for left and right hemisphere features")
+    logging.info("Creating long-form data for left and right hemisphere features")
 
     lh_columns = [
         col for col in rescaled_mri_all_features_with_prs.columns if col.endswith("lh")
     ]
 
-    print("Number of left hemisphere features: ", len(lh_columns))
+    logging.info("Number of left hemisphere features: %d", len(lh_columns))
 
     rh_columns = [
         col for col in rescaled_mri_all_features_with_prs.columns if col.endswith("rh")
     ]
 
-    print("Number of right hemisphere features: ", len(rh_columns))
+    logging.info("Number of right hemisphere features: %d", len(rh_columns))
 
     # Identify all other columns (covariates, unilateral features, PRS.)
     other_columns = [
@@ -876,7 +877,7 @@ def preprocess(
         axis=0,
     )
 
-    print("Creating long-form data is error-free, Checked")
+    logging.info("Creating long-form data is error-free, Checked")
 
     # %%
 
@@ -894,30 +895,30 @@ def preprocess(
         index=True,
     )
 
-    print("Long-form imaging features with PRS saved to CSV")
+    logging.info("Long-form imaging features with PRS saved to CSV")
     # %%
     ### Now select the columns that are the phenotypes of interest for each modality
 
-    print("Selecting features of interest for each modality")
+    logging.info("Selecting features of interest for each modality")
 
     ### Remove global features for all modality
-    print("Removing global features for each modality")
+    logging.info("Removing global features for each modality")
 
-    print("Cortical thickness global features:")
-    print(list(t1w_cortical_thickness_pass.columns[-3:]))
+    logging.info("Cortical thickness global features:")
+    logging.info("%s", list(t1w_cortical_thickness_pass.columns[-3:]))
 
     t1w_cortical_thickness_rois = list(t1w_cortical_thickness_pass.columns[1:-3])
 
     # For cortical volume
 
-    print("Cortical volume global features:")
-    print(list(t1w_cortical_volume_pass.columns[-3:]))
+    logging.info("Cortical volume global features:")
+    logging.info("%s", list(t1w_cortical_volume_pass.columns[-3:]))
     t1w_cortical_volume_rois = list(t1w_cortical_volume_pass.columns[1:-3])
 
     # For surface area
 
-    print("Cortical surface area global features:")
-    print(list(t1w_cortical_surface_area_pass.columns[-3:]))
+    logging.info("Cortical surface area global features:")
+    logging.info("%s", list(t1w_cortical_surface_area_pass.columns[-3:]))
     t1w_cortical_surface_area_rois = list(t1w_cortical_surface_area_pass.columns[1:-3])
 
     ### For subcortical volume
@@ -935,8 +936,8 @@ def preprocess(
         "smri_vol_scs_wmhint",
     ]
 
-    print("Subcortical volume global features:")
-    print(global_subcortical_features)
+    logging.info("Subcortical volume global features:")
+    logging.info("%s", global_subcortical_features)
 
     # FA global features
     global_FA_features = [
@@ -947,8 +948,8 @@ def preprocess(
         "FA_hemisphere_dti_atlas_tract_fiberslh",
     ]
 
-    print("FA global features:")
-    print(global_FA_features)
+    logging.info("FA global features:")
+    logging.info("%s", global_FA_features)
 
     # MD global features
     global_MD_features = [
@@ -959,8 +960,8 @@ def preprocess(
         "MD_hemisphere_dti_atlas_tract_fiberslh",
     ]
 
-    print("MD global features:")
-    print(global_MD_features)
+    logging.info("MD global features:")
+    logging.info("%s", global_MD_features)
 
     # Step 2: Select subcortical ROIs
     t1w_subcortical_volume_rois = [
@@ -1027,13 +1028,13 @@ def preprocess(
         "unilateral_tract_MD": get_bilateral_and_unilateral_features(MD_rois)[1],
     }
 
-    print(
+    logging.info(
         "Creating features of interest for repeated effects modeling is error-free, Checked"
     )
 
-    print("Number of features for each modality:")
+    logging.info("Number of features for each modality:")
     for modality, features in features_of_interest.items():
-        print(f"{modality}: {len(features)} features")
+        logging.info(f"{modality}: {len(features)} features")
 
     features_for_repeated_effects_path = Path(
         processed_data_path,
