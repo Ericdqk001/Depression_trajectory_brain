@@ -710,7 +710,7 @@ def preprocess(
 
     PRS_path = Path(
         analysis_data_path,
-        "abcd_pgcmdd3_sbayesrc_multiancestry.txt",
+        "adoldep_noABCD_eurmeta_sbayesrc.txt",
     )
 
     logging.info("PRS data file name: %s", PRS_path.name)

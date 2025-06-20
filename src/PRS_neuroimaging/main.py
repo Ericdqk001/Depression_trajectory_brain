@@ -100,7 +100,7 @@ if __name__ == "__main__":
         "4_year_follow_up_y_arm_1",
     ]
 
-    version_name = "abcd_pgcmdd3_sbayesrc_multiancestry"
+    version_name = "adoldep_noABCD_eurmeta_sbayesrc"
 
     predictor = "score"
 
