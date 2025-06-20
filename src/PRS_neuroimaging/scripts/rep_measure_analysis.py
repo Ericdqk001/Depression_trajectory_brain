@@ -108,23 +108,23 @@ def perform_repeated_measures_analysis(
             # "C(demo_comb_income_v2)",
         ]
 
-        if modality == "bilateral_cortical_thickness":
-            fixed_effects.append("smri_thick_cdk_mean")
+        # if modality == "bilateral_cortical_thickness":
+        #     fixed_effects.append("smri_thick_cdk_mean")
 
-        elif modality == "bilateral_cortical_surface_area":
-            fixed_effects.append("smri_area_cdk_total")
+        # elif modality == "bilateral_cortical_surface_area":
+        #     fixed_effects.append("smri_area_cdk_total")
 
-        elif modality == "bilateral_cortical_volume":
-            fixed_effects.append("smri_vol_scs_intracranialv")
+        # elif modality == "bilateral_cortical_volume":
+        #     fixed_effects.append("smri_vol_scs_intracranialv")
 
-        elif modality == "bilateral_subcortical_volume":
-            fixed_effects.append("smri_vol_scs_intracranialv")
+        # elif modality == "bilateral_subcortical_volume":
+        #     fixed_effects.append("smri_vol_scs_intracranialv")
 
-        elif modality == "bilateral_tract_FA":
-            fixed_effects.append("FA_all_dti_atlas_tract_fibers")
+        # elif modality == "bilateral_tract_FA":
+        #     fixed_effects.append("FA_all_dti_atlas_tract_fibers")
 
-        elif modality == "bilateral_tract_MD":
-            fixed_effects.append("MD_all_dti_atlas_tract_fibers")
+        # elif modality == "bilateral_tract_MD":
+        #     fixed_effects.append("MD_all_dti_atlas_tract_fibers")
 
         for feature in roi_list:
             print(f"Fitting model for: {feature}")

@@ -106,14 +106,14 @@ def perform_glm(
             # "C(demo_comb_income_v2)",
         ]
 
-        if modality == "unilateral_subcortical_features":
-            fixed_effects.append("smri_vol_scs_intracranialv")
+        # if modality == "unilateral_subcortical_features":
+        #     fixed_effects.append("smri_vol_scs_intracranialv")
 
-        elif modality == "unilateral_tract_FA":
-            fixed_effects.append("FA_all_dti_atlas_tract_fibers")
+        # elif modality == "unilateral_tract_FA":
+        #     fixed_effects.append("FA_all_dti_atlas_tract_fibers")
 
-        elif modality == "unilateral_tract_MD":
-            fixed_effects.append("MD_all_dti_atlas_tract_fibers")
+        # elif modality == "unilateral_tract_MD":
+        #     fixed_effects.append("MD_all_dti_atlas_tract_fibers")
 
         features = feature_dict[modality]
 
