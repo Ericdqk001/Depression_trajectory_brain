@@ -196,13 +196,16 @@ def visualise_effect_size(
 
         pvals = modality_df["p_value"].values
 
-        rejected, _, _, _ = multipletests(
+        rejected, pvals_corrected, _, _ = multipletests(
             pvals,
             alpha=0.05,
             method="fdr_bh",
         )
 
         combined_df.loc[modality_df.index, "significant"] = rejected
+
+        # Save the corrected p-values
+        combined_df.loc[modality_df.index, "p_value_corrected"] = pvals_corrected
 
         logging.info("Applying FDR correction is error-free, checked.")
 

@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     predictor = "score"
 
-    experiment_number = 4
+    experiment_number = 5
 
     for wave in all_img_waves:
         print(f"Running analysis for {wave}...")
