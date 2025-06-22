@@ -825,7 +825,7 @@ def preprocess(
 
     PRS_path = Path(
         analysis_data_path,
-        "adoldep_noABCD_eurmeta_sbayesrc.txt",
+        "trans_noABCD_metal_sbayesrc.txt",
     )
 
     print(
