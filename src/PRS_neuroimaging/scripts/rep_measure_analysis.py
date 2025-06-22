@@ -105,7 +105,6 @@ def perform_repeated_measures_analysis(
             "pc4",
             "pc5",
             "pc6",
-            # "C(demo_comb_income_v2)",
         ]
 
         # if modality == "bilateral_cortical_thickness":

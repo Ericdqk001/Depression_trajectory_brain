@@ -1,4 +1,5 @@
 import logging
+import shutil
 from pathlib import Path
 
 from src.PRS_neuroimaging.scripts.glm import perform_glm
@@ -49,13 +50,15 @@ def main(
     if not results_path.exists():
         results_path.mkdir(parents=True, exist_ok=True)
 
-    log_file = results_path / "experiment.log"
+    local_log_file = Path("/tmp") / "experiment.log"
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
+        handlers=[logging.FileHandler(local_log_file), logging.StreamHandler()],
     )
+
+    logging.info("Logging started. Writing to local log at: %s", local_log_file)
 
     # Call the preprocess function from the prepare_img module
     preprocess(
@@ -91,6 +94,14 @@ def main(
         predictor=predictor,
     )
 
+    final_log_file = results_path / "experiment.log"
+
+    try:
+        shutil.move(str(local_log_file), str(final_log_file))
+        print(f"Log file moved to: {final_log_file}")
+    except Exception as e:
+        print(f"Failed to move log file to mounted drive: {e}")
+
 
 if __name__ == "__main__":
     # Run the main function with the default wave
@@ -104,7 +115,7 @@ if __name__ == "__main__":
 
     predictor = "score"
 
-    experiment_number = 1
+    experiment_number = 4
 
     for wave in all_img_waves:
         print(f"Running analysis for {wave}...")
