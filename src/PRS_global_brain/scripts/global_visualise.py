@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def visualise_effect_size(
+def combine_fdr_corrected_prs_results(
     wave: str = "baseline_year_1_arm_1",
     experiment_number: int = 1,
-    version_name: str = "CBCL_replication_test",
+    version_name: str = "test",
+    if_visualise: bool = True,
 ):
     data_store_path = Path(
         "/",
@@ -78,57 +79,72 @@ def visualise_effect_size(
         logging.error(f"Unrecognized modality values found: {unknown_modalities}")
         sys.exit("Visualisation aborted due to unknown modalities.")
 
-    logging.info("Mapping modality names is error-free, checked.")
-
-    # Assign colors
-    modality_palette = {
-        "cortical_thickness": "#1f77b4",
-        "cortical_volume": "#aec7e8",
-        "cortical_surface_area": "#ffbb78",
-        "subcortical_volume": "#ff7f0e",
-        "tract_FA": "#2ca02c",
-        "tract_MD": "#98df8a",
-    }
-
-    global_feature_df["modality_color"] = global_feature_df["modality"].map(
-        modality_palette
-    )
-
-    # Annotation logic
-    def get_label(modality, feature):
-        # Remove the prefix "img_" from the feature name
-
-        feature = feature.replace("img_", "") if feature.startswith("img_") else feature
-
-        if modality == "cortical_thickness":
-            return feature.replace("smri_thick_cdk_", "")
-        elif modality == "cortical_volume":
-            return feature.replace("smri_vol_cdk_", "")
-        elif modality == "cortical_surface_area":
-            return feature.replace("smri_area_cdk_", "")
-        elif modality == "subcortical_volume":
-            return feature.replace("smri_vol_scs_", "")
-        elif modality == "tract_FA":
-            return feature.replace("FA_dti_atlas_tract_", "")
-        elif modality == "tract_MD":
-            return feature.replace("MD_dti_atlas_tract_", "")
-        else:
-            return feature
-
     # Mark features as significant if p_value < 0.05 (no FDR correction)
     global_feature_df["significant"] = global_feature_df["p_value"] < 0.05
 
     # Assign plot color: red for significant, otherwise modality color
-    sig_color = "#d62728"  # red for significant
-    global_feature_df["plot_color"] = global_feature_df.apply(
-        lambda row: sig_color if row["significant"] else row["modality_color"], axis=1
-    )
+    if if_visualise:
+        # Annotation logic
+        def get_label(modality, feature):
+            # Remove the prefix "img_" from the feature name
 
-    # Annotate all features regardless of significance
-    global_feature_df["label"] = global_feature_df.apply(
-        lambda row: get_label(row["modality"], row["feature"]), axis=1
-    )
-    logging.info("All features annotated, significance based on raw p-value < 0.05.")
+            feature = (
+                feature.replace("img_", "") if feature.startswith("img_") else feature
+            )
+
+            if modality == "cortical_thickness":
+                return feature.replace("smri_thick_cdk_", "")
+            elif modality == "cortical_volume":
+                return feature.replace("smri_vol_cdk_", "")
+            elif modality == "cortical_surface_area":
+                return feature.replace("smri_area_cdk_", "")
+            elif modality == "subcortical_volume":
+                return feature.replace("smri_vol_scs_", "")
+            elif modality == "tract_FA":
+                return feature.replace("FA_dti_atlas_tract_", "")
+            elif modality == "tract_MD":
+                return feature.replace("MD_dti_atlas_tract_", "")
+            else:
+                return feature
+
+        modality_palette = {
+            "cortical_thickness": "#1f77b4",
+            "cortical_volume": "#aec7e8",
+            "cortical_surface_area": "#ffbb78",
+            "subcortical_volume": "#ff7f0e",
+            "tract_FA": "#2ca02c",
+            "tract_MD": "#98df8a",
+        }
+
+        global_feature_df["modality_color"] = global_feature_df["modality"].map(
+            modality_palette
+        )
+
+        sig_color = "#d62728"  # red for significant
+        global_feature_df["plot_color"] = global_feature_df.apply(
+            lambda row: sig_color if row["significant"] else row["modality_color"],
+            axis=1,
+        )
+
+        # Annotate all features regardless of significance
+        global_feature_df["label"] = global_feature_df.apply(
+            lambda row: get_label(row["modality"], row["feature"]), axis=1
+        )
+        logging.info(
+            "All features annotated, significance based on raw p-value < 0.05."
+        )
+
+        # Visualise the effect size
+        save_path = results_path / "images"
+        if not save_path.exists():
+            save_path.mkdir(parents=True, exist_ok=True)
+
+        visualise_effect_size(
+            df=global_feature_df,
+            modality_palette=modality_palette,
+            save_path=save_path,
+            wave=wave,
+        )
 
     # Save the combined DataFrame
     global_feature_df.to_csv(
@@ -139,15 +155,17 @@ def visualise_effect_size(
         f"Combined results saved to: {results_path / f'combined_fdr_corrected_prs_results-{wave}.csv'}"
     )
 
+
+def visualise_effect_size(
+    df: pd.DataFrame = None,
+    modality_palette: dict = None,
+    save_path: Path = None,
+    wave: str = "baseline_year_1_arm_1",
+):
     # Sort by modality group
     modality_order = list(modality_palette.keys())
 
-    ordered_df = pd.concat(
-        [
-            global_feature_df[global_feature_df["modality"] == mod]
-            for mod in modality_order
-        ]
-    )
+    ordered_df = pd.concat([df[df["modality"] == mod] for mod in modality_order])
     ordered_df = ordered_df.reset_index(drop=True)
 
     # Plot
@@ -231,16 +249,7 @@ def visualise_effect_size(
 
     plt.tight_layout()
 
-    # Save
-    output_dir = Path(
-        analysis_root_path,
-        version_name,
-        "experiments",
-        f"exp_{experiment_number}",
-        "images",
-    )
-    output_dir.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_dir / f"PRS_plot-{wave}.png", dpi=300)
-    logging.info(f"Plot saved to: {output_dir / f'PRS_plot-{wave}.png'}")
+    plt.savefig(save_path / f"PRS_plot-{wave}.png", dpi=300)
+    logging.info(f"Plot saved to: {save_path / f'PRS_plot-{wave}.png'}")
 
     plt.show()

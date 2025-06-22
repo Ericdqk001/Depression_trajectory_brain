@@ -823,15 +823,9 @@ def preprocess(
 
     # %% TODO: This section joins the rick factors
 
-    # PRS_path = Path(
-    #     "data",
-    #     "poppy",
-    #     "adoldep_noABCD_sbayesrc.profile",
-    # )
-
     PRS_path = Path(
         analysis_data_path,
-        "abcd_adoldep_sbayesrc_eur_amr.txt",
+        "adoldep_noABCD_eurmeta_sbayesrc.txt",
     )
 
     print(

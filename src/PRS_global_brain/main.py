@@ -1,14 +1,17 @@
 import logging
+import shutil
 from pathlib import Path
 
 from src.PRS_global_brain.scripts.global_glm import perform_glm
-from src.PRS_global_brain.scripts.global_visualise import visualise_effect_size
+from src.PRS_global_brain.scripts.global_visualise import (
+    combine_fdr_corrected_prs_results,
+)
 from src.PRS_global_brain.scripts.prepare_img import preprocess
 
 
 def main(
     wave: str = "baseline_year_1_arm_1",
-    version_name: str = "abcd_adoldep_global_brain_analysis",
+    version_name: str = "test",
     experiment_number: int = 1,
     predictor: str = "score",
 ):
@@ -41,12 +44,12 @@ def main(
     if not results_path.exists():
         results_path.mkdir(parents=True, exist_ok=True)
 
-    log_file = results_path / "experiment.log"
+    local_log_file = Path("/tmp") / "experiment.log"
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
+        handlers=[logging.FileHandler(local_log_file), logging.StreamHandler()],
     )
 
     # Call the preprocess function from the prepare_img module
@@ -63,11 +66,20 @@ def main(
         predictor=predictor,
     )
     # # Call the visualise_effect_size function from the visualise module
-    visualise_effect_size(
+    combine_fdr_corrected_prs_results(
         wave=wave,
         experiment_number=experiment_number,
         version_name=version_name,
+        if_visualise=False,
     )
+
+    final_log_file = results_path / "experiment.log"
+
+    try:
+        shutil.move(str(local_log_file), str(final_log_file))
+        print(f"Log file moved to: {final_log_file}")
+    except Exception as e:
+        print(f"Failed to move log file to mounted drive: {e}")
 
 
 if __name__ == "__main__":
@@ -78,7 +90,7 @@ if __name__ == "__main__":
         "4_year_follow_up_y_arm_1",
     ]
 
-    version_name = "abcd_adoldep_sbayesrc_eur_amr_global_brain_analysis"
+    version_name = "global_adoldep_noABCD_eurmeta_sbayesrc"
 
     predictor = "score"
 
