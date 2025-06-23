@@ -21,45 +21,6 @@ def main(
     experiment_number: int = 1,
     predictor: str = "",
 ):
-    data_store_path = Path(
-        "/",
-        "Volumes",
-        "GenScotDepression",
-    )
-
-    analysis_root_path = Path(
-        data_store_path,
-        "users",
-        "Eric",
-        "poppy_neuroimaging",
-    )
-
-    experiments_path = Path(
-        analysis_root_path,
-        version_name,
-        "experiments",
-    )
-
-    if not experiments_path.exists():
-        experiments_path.mkdir(parents=True, exist_ok=True)
-
-    results_path = Path(
-        experiments_path,
-        f"exp_{experiment_number}",
-    )
-    if not results_path.exists():
-        results_path.mkdir(parents=True, exist_ok=True)
-
-    local_log_file = Path("/tmp") / "experiment.log"
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.FileHandler(local_log_file), logging.StreamHandler()],
-    )
-
-    logging.info("Logging started. Writing to local log at: %s", local_log_file)
-
     # Call the preprocess function from the prepare_img module
     preprocess(
         wave=wave,
@@ -94,16 +55,49 @@ def main(
         predictor=predictor,
     )
 
-    final_log_file = results_path / "experiment.log"
-
-    try:
-        shutil.move(str(local_log_file), str(final_log_file))
-        print(f"Log file moved to: {final_log_file}")
-    except Exception as e:
-        print(f"Failed to move log file to mounted drive: {e}")
-
 
 if __name__ == "__main__":
+    version_name = "adoldep_noABCD_eurmeta_sbayesrc"
+
+    experiment_number = 7
+
+    data_store_path = Path(
+        "/",
+        "Volumes",
+        "GenScotDepression",
+    )
+
+    analysis_root_path = Path(
+        data_store_path,
+        "users",
+        "Eric",
+        "poppy_neuroimaging",
+    )
+
+    experiments_path = Path(
+        analysis_root_path,
+        version_name,
+        "experiments",
+    )
+
+    if not experiments_path.exists():
+        experiments_path.mkdir(parents=True, exist_ok=True)
+
+    results_path = Path(
+        experiments_path,
+        f"exp_{experiment_number}",
+    )
+
+    if not results_path.exists():
+        results_path.mkdir(parents=True, exist_ok=True)
+
+    local_log_file = Path("/tmp") / "experiment.log"
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[logging.FileHandler(local_log_file), logging.StreamHandler()],
+    )
     # Run the main function with the default wave
     all_img_waves = [
         "baseline_year_1_arm_1",
@@ -111,11 +105,7 @@ if __name__ == "__main__":
         "4_year_follow_up_y_arm_1",
     ]
 
-    version_name = "adoldep_noABCD_eurmeta_sbayesrc"
-
     predictor = "score"
-
-    experiment_number = 5
 
     for wave in all_img_waves:
         print(f"Running analysis for {wave}...")
@@ -126,3 +116,11 @@ if __name__ == "__main__":
             predictor=predictor,
         )
         print(f"Analysis for {wave} completed.\n")
+
+    final_log_file = results_path / "experiment.log"
+
+    try:
+        shutil.move(str(local_log_file), str(final_log_file))
+        print(f"Log file moved to: {final_log_file}")
+    except Exception as e:
+        print(f"Failed to move log file to mounted drive: {e}")

@@ -39,7 +39,7 @@ def main(
 
 if __name__ == "__main__":
     version_name = "global_trans_noABCD_metal_sbayesrc"
-    experiment_number = 1
+    experiment_number = 3
 
     data_store_path = Path(
         "/",
