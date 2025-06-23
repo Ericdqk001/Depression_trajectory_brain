@@ -52,16 +52,10 @@ def perform_glm(
         "experiments",
     )
 
-    if not experiments_path.exists():
-        experiments_path.mkdir(parents=True, exist_ok=True)
-
     results_path = Path(
         experiments_path,
         f"exp_{experiment_number}",
     )
-
-    if not results_path.exists():
-        results_path.mkdir(parents=True, exist_ok=True)
 
     # === Load data ===
     features_df = pd.read_csv(
@@ -124,7 +118,7 @@ def perform_glm(
 
             formula = f"{feature} ~ {predictor} + {' + '.join(fixed_effects)}"
 
-            logging.info("GLM formula: %s", formula)
+            logging.info("Unilateral GLM formula: %s", formula)
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always", ConvergenceWarning)
                 try:
@@ -225,7 +219,7 @@ def perform_glm(
             ]
 
             for feature in features:
-                logging.info(f"Processing feature: {feature}")
+                logging.info(f"Processing feature with sig interaction term: {feature}")
                 for hemi in hemi_suffix:
                     feature_with_hemi = f"{feature}{hemi}"
                     feature_with_hemi = feature_with_hemi.replace("img_", "")
@@ -254,8 +248,25 @@ def perform_glm(
                                 f"Model failed for {feature_with_hemi} in {modality} for {wave}: {e}"
                             )
                             continue
-    # === Save results ===
 
+                    for effect in [predictor]:
+                        coef = model.params[effect]
+                        pval = model.pvalues[effect]
+                        ci_low, ci_high = model.conf_int().loc[effect].values
+
+                        sig_hemi_glm_results.append(
+                            {
+                                "modality": modality,
+                                "feature": feature_with_hemi,
+                                "predictor": effect,
+                                "coefficient": coef,
+                                "p_value": pval,
+                                "CI_lower": ci_low,
+                                "CI_upper": ci_high,
+                            }
+                        )
+
+    # === Save results ===
     columns = [
         "modality",
         "feature",
