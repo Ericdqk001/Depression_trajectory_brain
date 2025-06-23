@@ -89,22 +89,24 @@ def perform_glm(
     # === Run GLMs ===
     glm_results = []
 
+    fixed_effects = [
+        "interview_age",
+        "age2",
+        "C(demo_sex_v2)",
+        "C(img_device_label)",
+        "pc1",
+        "pc2",
+        "pc3",
+        "pc4",
+        "pc5",
+        "pc6",
+        # "C(demo_comb_income_v2)",
+    ]
+
+    logging.info("Fixed effects for GLM: %s", fixed_effects)
+
     for modality in modalities:
         logging.info("Performing unilateral GLM for modality: %s", modality)
-
-        fixed_effects = [
-            "interview_age",
-            "age2",
-            "C(demo_sex_v2)",
-            "C(img_device_label)",
-            "pc1",
-            "pc2",
-            "pc3",
-            "pc4",
-            "pc5",
-            "pc6",
-            # "C(demo_comb_income_v2)",
-        ]
 
         # if modality == "unilateral_subcortical_features":
         #     fixed_effects.append("smri_vol_scs_intracranialv")
@@ -121,6 +123,8 @@ def perform_glm(
             logging.info("Processing feature: %s", feature)
 
             formula = f"{feature} ~ {predictor} + {' + '.join(fixed_effects)}"
+
+            logging.info("GLM formula: %s", formula)
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always", ConvergenceWarning)
                 try:
@@ -196,20 +200,6 @@ def perform_glm(
             logging.info("No significant hemi interaction features found")
             continue
 
-        fixed_effects = [
-            "interview_age",
-            "age2",
-            "C(demo_sex_v2)",
-            "C(img_device_label)",
-            "pc1",
-            "pc2",
-            "pc3",
-            "pc4",
-            "pc5",
-            "pc6",
-            # "C(demo_comb_income_v2)",
-        ]
-
         # if modality == "bilateral_cortical_thickness":
         #     fixed_effects.append("smri_thick_cdk_mean")
 
@@ -240,6 +230,10 @@ def perform_glm(
                     feature_with_hemi = f"{feature}{hemi}"
                     feature_with_hemi = feature_with_hemi.replace("img_", "")
                     formula = f"{feature_with_hemi} ~ {predictor} + {' + '.join(fixed_effects)}"
+
+                    logging.info(
+                        "GLM formula for those with interaction terms: %s", formula
+                    )
                     with warnings.catch_warnings(record=True) as w:
                         warnings.simplefilter("always", ConvergenceWarning)
                         try:

@@ -87,25 +87,27 @@ def perform_repeated_measures_analysis(
     # Store results here
     results_list = []
 
+    # Fixed effects to include
+    fixed_effects = [
+        "interview_age",
+        "age2",
+        "C(demo_sex_v2)",
+        "C(img_device_label)",
+        "pc1",
+        "pc2",
+        "pc3",
+        "pc4",
+        "pc5",
+        "pc6",
+    ]
+
+    logging.info("Fixed effects for repeated measures analysis: %s", fixed_effects)
+
     # Loop over each modality
     for modality in modalities:
         print(f"Processing {modality}")
         logging.info("Processing %s", modality)
         roi_list = feature_sets[modality]
-
-        # Fixed effects to include
-        fixed_effects = [
-            "interview_age",
-            "age2",
-            "C(demo_sex_v2)",
-            "C(img_device_label)",
-            "pc1",
-            "pc2",
-            "pc3",
-            "pc4",
-            "pc5",
-            "pc6",
-        ]
 
         # if modality == "bilateral_cortical_thickness":
         #     fixed_effects.append("smri_thick_cdk_mean")
@@ -133,6 +135,8 @@ def perform_repeated_measures_analysis(
             formula = (
                 f"{feature} ~ C(hemisphere) * {predictor} + {' + '.join(fixed_effects)}"
             )
+
+            logging.info("Rep Model formula: %s", formula)
 
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always", ConvergenceWarning)
