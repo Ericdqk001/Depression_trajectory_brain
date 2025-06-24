@@ -57,9 +57,9 @@ def main(
 
 
 if __name__ == "__main__":
-    version_name = "adoldep_noABCD_eurmeta_sbayesrc"
+    version_name = "trans_noABCD_metal_sbayesrc"
 
-    experiment_number = 7
+    experiment_number = 4
 
     data_store_path = Path(
         "/",
